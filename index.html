@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PokéTwin: Kanto 151 Pokédex Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+</head>
+<body>
+
+<header>
+  <div class="pokedex-lens-bar">
+    <div class="big-lens"></div>
+    <div class="mini-lens red"></div>
+    <div class="mini-lens yellow"></div>
+    <div class="mini-lens green"></div>
+    <span class="kanto-tag">KANTO OS 1.51</span>
+  </div>
+  <h1>PokéTwin</h1>
+  <p class="subtitle">Discover your true twin among the original 151 Kanto Pokémon</p>
+</header>
+
+<main>
+  <!-- Input Section -->
+  <section class="card" id="input-section">
+    <div class="pokedex-subbar">
+      <div class="section-title">
+        <span>⚡</span> Pokédex Optical Scanner
+      </div>
+      <button class="browse-btn" id="open-roster-btn">📖 Browse 151 Roster</button>
+    </div>
+
+    <div class="upload-zone" id="drop-zone">
+      <p style="font-size: 15px; margin-bottom: 4px; font-weight: 600;">Drag and drop your photo here</p>
+      <p style="font-size: 13px; color: #94a3b8;">or select an option below</p>
+      
+      <div class="upload-actions" onclick="event.stopPropagation()">
+        <label class="btn btn-primary" for="file-input">
+          📁 Choose Photo
+        </label>
+        <button class="btn btn-secondary" id="cam-toggle-btn">
+          📷 Take Selfie
+        </button>
+      </div>
+    </div>
+    <input id="file-input" type="file" accept="image/*">
+
+    <div id="video-wrap">
+      <video id="video" autoplay playsinline></video>
+      <div style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center;">
+        <button class="btn btn-primary" id="capture-btn">📸 Snap Photo</button>
+      </div>
+    </div>
+
+    <div id="preview-box">
+      <img id="preview" alt="User target">
+    </div>
+
+    <div style="text-align: center; margin-top: 16px;">
+      <button class="btn btn-accent" id="analyze-btn" disabled style="padding: 14px 28px; font-size: 16px;">
+        🔍 Scan My Pokémon Twin
+      </button>
+    </div>
+
+    <div class="presets-section">
+      <div class="presets-title">⚡ QUICK VIBE SAMPLES (CLICK TO TEST)</div>
+      <div class="preset-grid">
+        <div class="preset-pill" onclick="loadSamplePreset('pallet')">🌅 Pallet Sunrise</div>
+        <div class="preset-pill" onclick="loadSamplePreset('cinnabar')">🌋 Cinnabar Magma</div>
+        <div class="preset-pill" onclick="loadSamplePreset('cerulean')">🌊 Cerulean Coast</div>
+        <div class="preset-pill" onclick="loadSamplePreset('viridian')">🌲 Viridian Forest</div>
+        <div class="preset-pill" onclick="loadSamplePreset('lavender')">🔮 Lavender Tower</div>
+        <div class="preset-pill" onclick="loadSamplePreset('celadon')">⚡ Celadon Neon</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scanning State Overlay -->
+  <section class="card" id="scan-overlay">
+    <div class="pokeball-spinner"></div>
+    <div style="font-family: var(--font-hud); font-size: 18px; color: #38bdf8; letter-spacing: 1px;" id="scan-status-text">
+      SYNCHRONIZING WITH SILPH CO. ARCHIVES...
+    </div>
+    <div class="scan-progress-bar">
+      <div class="scan-progress-fill" id="scan-progress"></div>
+    </div>
+  </section>
+
+  <!-- Results Section -->
+  <section class="card" id="result-card">
+    <div class="result-header">
+      <div class="match-rate-pill" id="match-score-badge">KANTO SYNC: 96%</div>
+      <h2 style="font-family: var(--font-hud); font-size: 26px; text-transform: uppercase;" id="result-headline">
+        You are a kindred spirit of...
+      </h2>
+    </div>
+
+    <div class="pokemon-showcase">
+      <div class="pokemon-art-wrap">
+        <span class="shiny-badge" id="shiny-tag">✨ SHINY KANTO!</span>
+        <img id="pokemon-img" src="" alt="Matched Pokémon">
+      </div>
+      <div class="pokemon-info">
+        <h3><span class="pokedex-id" id="pokemon-id">#001</span><span id="pokemon-name">Bulbasaur</span></h3>
+        <div class="types-row" id="pokemon-types"></div>
+        <p class="pokemon-lore" id="pokemon-lore"></p>
+        <div class="pokemon-specs">
+          <div>NATURE: <span id="pokemon-nature">Adamant</span></div>
+          <div>SIGNATURE: <span id="pokemon-move">Vine Whip</span></div>
+        </div>
+        <div class="palette-swatches" id="swatch-container"></div>
+      </div>
+    </div>
+
+    <!-- 5-Factor Vibe Meters -->
+    <div class="vibe-traits-grid">
+      <div class="trait-card">
+        <div class="trait-label">⚡ Energy</div>
+        <div class="trait-meter"><div class="trait-meter-fill" id="trait-energy" style="width: 70%; background: #fbbf24;"></div></div>
+        <div class="trait-value" id="trait-energy-val">70%</div>
+      </div>
+      <div class="trait-card">
+        <div class="trait-label">🍃 Chill / Zen</div>
+        <div class="trait-meter"><div class="trait-meter-fill" id="trait-chill" style="width: 50%; background: #34d399;"></div></div>
+        <div class="trait-value" id="trait-chill-val">50%</div>
+      </div>
+      <div class="trait-card">
+        <div class="trait-label">🌸 Cuteness</div>
+        <div class="trait-meter"><div class="trait-meter-fill" id="trait-cuteness" style="width: 60%; background: #f472b6;"></div></div>
+        <div class="trait-value" id="trait-cuteness-val">60%</div>
+      </div>
+      <div class="trait-card">
+        <div class="trait-label">🔮 Mystery</div>
+        <div class="trait-meter"><div class="trait-meter-fill" id="trait-mystery" style="width: 45%; background: #a855f7;"></div></div>
+        <div class="trait-value" id="trait-mystery-val">45%</div>
+      </div>
+      <div class="trait-card">
+        <div class="trait-label">🛡️ Bravery</div>
+        <div class="trait-meter"><div class="trait-meter-fill" id="trait-bravery" style="width: 80%; background: #f87171;"></div></div>
+        <div class="trait-value" id="trait-bravery-val">80%</div>
+      </div>
+    </div>
+
+    <!-- Runner Ups -->
+    <div class="runners-title">Alternative Kanto Resonance Matches</div>
+    <div class="runners-grid" id="runners-container"></div>
+
+    <div class="card-actions">
+      <button class="btn btn-primary" id="download-card-btn">💾 Download Trainer Card (PNG)</button>
+      <button class="btn btn-secondary" id="share-summary-btn">📋 Copy Summary</button>
+      <button class="btn btn-secondary" onclick="resetScan()">🔄 Try Another Photo</button>
+    </div>
+  </section>
+</main>
+
+<!-- Modal: Browse 151 Pokédex -->
+<div id="pokedex-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="font-family: var(--font-hud); font-size: 20px;">📘 Kanto Pokédex (#001 - #151)</h3>
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+    </div>
+    <div class="search-filter-bar">
+      <input type="text" class="search-input" id="search-151" placeholder="Search by name or # (e.g. Gengar, 025)...">
+      <select class="type-filter" id="filter-type">
+        <option value="">All Types</option>
+        <option value="Grass">Grass</option>
+        <option value="Fire">Fire</option>
+        <option value="Water">Water</option>
+        <option value="Electric">Electric</option>
+        <option value="Psychic">Psychic</option>
+        <option value="Ghost">Ghost</option>
+        <option value="Poison">Poison</option>
+        <option value="Bug">Bug</option>
+        <option value="Normal">Normal</option>
+        <option value="Fighting">Fighting</option>
+        <option value="Rock">Rock</option>
+        <option value="Ground">Ground</option>
+        <option value="Ice">Ice</option>
+        <option value="Dragon">Dragon</option>
+      </select>
+    </div>
+    <div class="roster-grid" id="modal-roster-grid"></div>
+  </div>
+</div>
+
+<script src="pokemon-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
