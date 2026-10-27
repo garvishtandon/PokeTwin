@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PokéTwin: Kanto 151 Pokédex Edition</title>
+<title>PokéTwin: Facial Biometric Pokédex Edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- Lightweight Face-API for in-browser neural facial landmark & expression detection -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 <link rel="stylesheet" href="style.css">
-</head>
 </head>
 <body>
 
@@ -18,10 +19,10 @@
     <div class="mini-lens red"></div>
     <div class="mini-lens yellow"></div>
     <div class="mini-lens green"></div>
-    <span class="kanto-tag">KANTO OS 1.51</span>
+    <span class="kanto-tag">BIOMETRIC SCANNER v2.0</span>
   </div>
   <h1>PokéTwin</h1>
-  <p class="subtitle">Discover your true twin among the original 151 Kanto Pokémon</p>
+  <p class="subtitle">Facial landmark, emotion expression & color harmony Pokédex matcher</p>
 </header>
 
 <main>
@@ -29,21 +30,21 @@
   <section class="card" id="input-section">
     <div class="pokedex-subbar">
       <div class="section-title">
-        <span>⚡</span> Pokédex Optical Scanner
+        <span>👁️</span> Facial Expression & Vibe Scanner
       </div>
       <button class="browse-btn" id="open-roster-btn">📖 Browse 151 Roster</button>
     </div>
 
     <div class="upload-zone" id="drop-zone">
-      <p style="font-size: 15px; margin-bottom: 4px; font-weight: 600;">Drag and drop your photo here</p>
-      <p style="font-size: 13px; color: #94a3b8;">or select an option below</p>
+      <p style="font-size: 15px; margin-bottom: 4px; font-weight: 600;">Drag and drop your selfie/portrait here</p>
+      <p style="font-size: 13px; color: #94a3b8;">Analyzes smiles, eye energy, brows & color palettes</p>
       
       <div class="upload-actions" onclick="event.stopPropagation()">
         <label class="btn btn-primary" for="file-input">
           📁 Choose Photo
         </label>
         <button class="btn btn-secondary" id="cam-toggle-btn">
-          📷 Take Selfie
+          📷 Take Live Selfie
         </button>
       </div>
     </div>
@@ -51,30 +52,38 @@
 
     <div id="video-wrap">
       <video id="video" autoplay playsinline></video>
-      <div style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center;">
-        <button class="btn btn-primary" id="capture-btn">📸 Snap Photo</button>
+      <canvas id="face-hud-canvas"></canvas>
+      <div style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; z-index: 10;">
+        <button class="btn btn-primary" id="capture-btn">📸 Capture Facial Scan</button>
       </div>
     </div>
 
     <div id="preview-box">
       <img id="preview" alt="User target">
+      <canvas id="preview-overlay-canvas"></canvas>
+    </div>
+
+    <!-- Live Expression Status Indicator -->
+    <div id="face-detect-pill" class="face-detect-pill" style="display: none;">
+      <span class="pulse-dot"></span>
+      <span id="face-detect-msg">Detecting facial features...</span>
     </div>
 
     <div style="text-align: center; margin-top: 16px;">
       <button class="btn btn-accent" id="analyze-btn" disabled style="padding: 14px 28px; font-size: 16px;">
-        🔍 Scan My Pokémon Twin
+        🔍 Scan Facial Vibe & Twin
       </button>
     </div>
 
     <div class="presets-section">
-      <div class="presets-title">⚡ QUICK VIBE SAMPLES (CLICK TO TEST)</div>
+      <div class="presets-title">⚡ QUICK EXPRESSION & VIBE SAMPLES (CLICK TO TEST)</div>
       <div class="preset-grid">
-        <div class="preset-pill" onclick="loadSamplePreset('pallet')">🌅 Pallet Sunrise</div>
-        <div class="preset-pill" onclick="loadSamplePreset('cinnabar')">🌋 Cinnabar Magma</div>
-        <div class="preset-pill" onclick="loadSamplePreset('cerulean')">🌊 Cerulean Coast</div>
-        <div class="preset-pill" onclick="loadSamplePreset('viridian')">🌲 Viridian Forest</div>
-        <div class="preset-pill" onclick="loadSamplePreset('lavender')">🔮 Lavender Tower</div>
-        <div class="preset-pill" onclick="loadSamplePreset('celadon')">⚡ Celadon Neon</div>
+        <div class="preset-pill" onclick="loadSampleExpression('happy')">😄 Radiant Smile</div>
+        <div class="preset-pill" onclick="loadSampleExpression('calm')">😌 Chill & Zen</div>
+        <div class="preset-pill" onclick="loadSampleExpression('fierce')">😠 Bold & Fierce</div>
+        <div class="preset-pill" onclick="loadSampleExpression('mystic')">🤔 Deep Introspective</div>
+        <div class="preset-pill" onclick="loadSampleExpression('playful')">😜 Playful / Quirky</div>
+        <div class="preset-pill" onclick="loadSampleExpression('surprised')">😲 High Energy Shock</div>
       </div>
     </div>
   </section>
@@ -83,7 +92,7 @@
   <section class="card" id="scan-overlay">
     <div class="pokeball-spinner"></div>
     <div style="font-family: var(--font-hud); font-size: 18px; color: #38bdf8; letter-spacing: 1px;" id="scan-status-text">
-      SYNCHRONIZING WITH SILPH CO. ARCHIVES...
+      CALIBRATING BIOMETRIC FACIAL MESH...
     </div>
     <div class="scan-progress-bar">
       <div class="scan-progress-fill" id="scan-progress"></div>
@@ -94,6 +103,7 @@
   <section class="card" id="result-card">
     <div class="result-header">
       <div class="match-rate-pill" id="match-score-badge">KANTO SYNC: 96%</div>
+      <div class="expression-badge" id="detected-expression-badge">EXPRESSION: RADIANT JOY 😄</div>
       <h2 style="font-family: var(--font-hud); font-size: 26px; text-transform: uppercase;" id="result-headline">
         You are a kindred spirit of...
       </h2>
@@ -111,6 +121,7 @@
         <div class="pokemon-specs">
           <div>NATURE: <span id="pokemon-nature">Adamant</span></div>
           <div>SIGNATURE: <span id="pokemon-move">Vine Whip</span></div>
+          <div>VIBE MATCH: <span id="pokemon-vibe-match" style="color: #4ade80;">Smile Synergy</span></div>
         </div>
         <div class="palette-swatches" id="swatch-container"></div>
       </div>
@@ -145,12 +156,12 @@
       </div>
     </div>
 
-    <!-- Runner Ups -->
-    <div class="runners-title">Alternative Kanto Resonance Matches</div>
+    <!-- Alternative Matches -->
+    <div class="runners-title">Alternative Biometric Resonance Matches</div>
     <div class="runners-grid" id="runners-container"></div>
 
     <div class="card-actions">
-      <button class="btn btn-primary" id="download-card-btn">💾 Download Trainer Card (PNG)</button>
+      <button class="btn btn-primary" id="download-card-btn">💾 Download Biometric Trainer Card (PNG)</button>
       <button class="btn btn-secondary" id="share-summary-btn">📋 Copy Summary</button>
       <button class="btn btn-secondary" onclick="resetScan()">🔄 Try Another Photo</button>
     </div>
