@@ -1,19 +1,24 @@
-# PokéTwin: Facial Biometric Pokédex Edition (v2.0)
+# PokéTwin: Biometric & SQL / Power BI Analytics Edition (v2.5)
 
-PokéTwin now features an in-browser **facial expression & landmark detection engine** paired with chromatic palette analysis to accurately match your true spirit Pokémon among the **original 151 Kanto Pokémon**.
+PokéTwin features real-time facial expression and color-vibe scanning matched against the original 151 Kanto Pokémon, combined with a built-in **Data Analytics Engine** that generates relational schemas for SQL and Microsoft Power BI.
 
 ---
 
-## 🧬 What's New in this Biometric Upgrade
+## 🌟 New Features in v2.5
 
-1. **Facial Landmark & HUD Tracking**:
-   - Live target-lock crosshair brackets track your face in real-time during webcam selfies.
-   - Automatically detects face bounding box and isolates facial features rather than just background noise.
+1. **Trainer Name Identification**:
+   - Trainers can enter their name before scanning.
+   - Name is persistent across browser sessions and appears directly on:
+     - Match greeting: *(e.g., "Garvish, your Kanto Spirit Twin is Gengar!")*
+     - Downloadable Collectible ID Passport *(e.g., "TRAINER: GARVISH | SILPH CO.")*
+     - Live Analytics Event Log.
 
-2. **Emotion & Expression Classification**:
-   - Detects emotional states: **Happy / Smiling (Joy)**, **Neutral (Zen)**, **Fierce / Intense (Focused)**, **Surprised (Electric Shock)**, and **Mystic / Pensive**.
-   - Directly harmonizes your detected mood with Pokémon behavioral typings (e.g., Big smile $\rightarrow$ Pikachu, Jigglypuff, Clefairy; Calm/Zen $\rightarrow$ Snorlax, Slowpoke, Lapras; Fierce $\rightarrow$ Charizard, Primeape, Machamp).
+2. **Built-in SQL & Power BI Analytics Hub**:
+   - Open the **"📊 SQL & Power BI Hub"** directly in the app.
+   - Live KPI Cards: **Total User Scans**, **Unique Trainers**, **Avg Sync Rate %**, and **Shiny Encounters**.
+   - Recent Trainer Scans log table.
 
-3. **Hybrid Algorithm (50% Color + 50% Facial Mood)**:
-   - Evaluates eye/smile contrast, skin tone, clothing chromatic palette, and emotional energy.
-   - 10% rare Shiny Encounter roll with shiny official sprites and fanfare.
+3. **1-Click Pipeline Data Exporters**:
+   - **Download Fact Scans (CSV)**: Generates `poketwin_fact_user_scans.csv` formatted with foreign keys and biometric scores for Power BI.
+   - **Download Dim Pokémon (CSV)**: Generates `poketwin_dim_pokemon.csv` for the 151 Pokémon dimension table.
+   - **Download SQL Script**: Generates table DDL, foreign key constraints, indexes, and analytical window functions.

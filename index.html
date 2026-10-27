@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PokéTwin: Facial Biometric Pokédex Edition</title>
+<title>PokéTwin: Biometric & Analytics Edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -19,10 +19,15 @@
     <div class="mini-lens red"></div>
     <div class="mini-lens yellow"></div>
     <div class="mini-lens green"></div>
-    <span class="kanto-tag">BIOMETRIC SCANNER v2.0</span>
+    <span class="kanto-tag">BIOMETRIC OS v2.5 • SQL & POWER BI READY</span>
   </div>
   <h1>PokéTwin</h1>
-  <p class="subtitle">Facial landmark, emotion expression & color harmony Pokédex matcher</p>
+  <p class="subtitle">Facial biometric Pokédex matcher with embedded SQL & Power BI analytics</p>
+  
+  <div class="top-nav-actions">
+    <button class="nav-btn" id="open-roster-btn">📖 Browse 151</button>
+    <button class="nav-btn accent-nav" id="open-analytics-btn">📊 SQL & Power BI Hub</button>
+  </div>
 </header>
 
 <main>
@@ -32,12 +37,20 @@
       <div class="section-title">
         <span>👁️</span> Facial Expression & Vibe Scanner
       </div>
-      <button class="browse-btn" id="open-roster-btn">📖 Browse 151 Roster</button>
+      <span class="badge-silph">SILPH CO. LINK ACTIVE</span>
+    </div>
+
+    <!-- Trainer Identity Input -->
+    <div class="trainer-id-bar">
+      <label for="trainer-name-input" class="trainer-label">
+        <span class="trainer-icon">🪪</span> TRAINER NAME:
+      </label>
+      <input type="text" id="trainer-name-input" class="trainer-input" placeholder="Enter your name (e.g. Garvish, Ash)..." maxlength="30">
     </div>
 
     <div class="upload-zone" id="drop-zone">
       <p style="font-size: 15px; margin-bottom: 4px; font-weight: 600;">Drag and drop your selfie/portrait here</p>
-      <p style="font-size: 13px; color: #94a3b8;">Analyzes smiles, eye energy, brows & color palettes</p>
+      <p style="font-size: 13px; color: #94a3b8;">Analyzes facial expression, mood & chromatic harmonies</p>
       
       <div class="upload-actions" onclick="event.stopPropagation()">
         <label class="btn btn-primary" for="file-input">
@@ -105,8 +118,9 @@
       <div class="match-rate-pill" id="match-score-badge">KANTO SYNC: 96%</div>
       <div class="expression-badge" id="detected-expression-badge">EXPRESSION: RADIANT JOY 😄</div>
       <h2 style="font-family: var(--font-hud); font-size: 26px; text-transform: uppercase;" id="result-headline">
-        You are a kindred spirit of...
+        Trainer, your Kanto Spirit Twin is...
       </h2>
+      <div class="trainer-tag-display" id="trainer-tag-display">TRAINER ID: GUEST</div>
     </div>
 
     <div class="pokemon-showcase">
@@ -119,6 +133,7 @@
         <div class="types-row" id="pokemon-types"></div>
         <p class="pokemon-lore" id="pokemon-lore"></p>
         <div class="pokemon-specs">
+          <div>TRAINER: <span id="spec-trainer-name" style="color: #38bdf8;">Trainer</span></div>
           <div>NATURE: <span id="pokemon-nature">Adamant</span></div>
           <div>SIGNATURE: <span id="pokemon-move">Vine Whip</span></div>
           <div>VIBE MATCH: <span id="pokemon-vibe-match" style="color: #4ade80;">Smile Synergy</span></div>
@@ -161,15 +176,16 @@
     <div class="runners-grid" id="runners-container"></div>
 
     <div class="card-actions">
-      <button class="btn btn-primary" id="download-card-btn">💾 Download Biometric Trainer Card (PNG)</button>
+      <button class="btn btn-primary" id="download-card-btn">💾 Download Passport (PNG)</button>
       <button class="btn btn-secondary" id="share-summary-btn">📋 Copy Summary</button>
+      <button class="btn btn-accent" onclick="openAnalyticsModal()">📊 View In Analytics Hub</button>
       <button class="btn btn-secondary" onclick="resetScan()">🔄 Try Another Photo</button>
     </div>
   </section>
 </main>
 
 <!-- Modal: Browse 151 Pokédex -->
-<div id="pokedex-modal">
+<div id="pokedex-modal" class="modal-backdrop">
   <div class="modal-content">
     <div class="modal-header">
       <h3 style="font-family: var(--font-hud); font-size: 20px;">📘 Kanto Pokédex (#001 - #151)</h3>
@@ -196,6 +212,85 @@
       </select>
     </div>
     <div class="roster-grid" id="modal-roster-grid"></div>
+  </div>
+</div>
+
+<!-- Modal: SQL & Power BI Analytics Hub -->
+<div id="analytics-modal" class="modal-backdrop">
+  <div class="modal-content analytics-modal-content">
+    <div class="modal-header">
+      <h3 style="font-family: var(--font-hud); font-size: 22px;">📊 PokéTwin SQL & Power BI Analytics Hub</h3>
+      <button class="modal-close" id="analytics-close-btn">&times;</button>
+    </div>
+
+    <!-- Live Analytics KPI Cards -->
+    <div class="analytics-kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-num" id="kpi-total-scans">0</div>
+        <div class="kpi-title">Total User Scans</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-num" id="kpi-unique-trainers">0</div>
+        <div class="kpi-title">Unique Trainers</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-num" id="kpi-avg-sync">0%</div>
+        <div class="kpi-title">Avg Sync Rate</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-num" id="kpi-shiny-count">0</div>
+        <div class="kpi-title">✨ Shiny Encounters</div>
+      </div>
+    </div>
+
+    <!-- Data Exporter Section -->
+    <div class="export-box">
+      <h4 class="export-title">📦 Data Pipelines & Export Tools for SQL & Power BI</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">
+        Every scan in this app is automatically logged into the analytical schema. Download clean CSVs and SQL files below to import directly into <strong>Microsoft Power BI</strong>, <strong>PostgreSQL</strong>, or <strong>MySQL</strong>.
+      </p>
+      
+      <div class="export-buttons-row">
+        <button class="btn btn-primary" id="export-fact-csv-btn">
+          📥 Download Fact Scans (CSV)
+        </button>
+        <button class="btn btn-secondary" id="export-dim-csv-btn">
+          📥 Download Dim Pokémon 151 (CSV)
+        </button>
+        <button class="btn btn-accent" id="export-sql-btn">
+          📜 Download SQL Schema & Queries
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Scan Log Table -->
+    <div class="table-wrap">
+      <div style="font-family: var(--font-hud); font-size: 15px; margin-bottom: 8px; color: #38bdf8;">
+        RECENT TRAINER SCANS LOG
+      </div>
+      <table class="analytics-table">
+        <thead>
+          <tr>
+            <th>Scan ID</th>
+            <th>Trainer</th>
+            <th>Timestamp</th>
+            <th>Emotion</th>
+            <th>Twin Pokémon</th>
+            <th>Sync %</th>
+            <th>Shiny?</th>
+          </tr>
+        </thead>
+        <tbody id="analytics-tbody">
+          <!-- Populated dynamically via JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div style="text-align: right; margin-top: 14px;">
+      <button class="btn btn-secondary" id="clear-data-btn" style="font-size: 12px; padding: 6px 12px;">
+        🗑️ Clear Local History
+      </button>
+    </div>
   </div>
 </div>
 

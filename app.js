@@ -1,4 +1,4 @@
-// Biometric Facial & Expression Analysis + Audio Engine
+// PokéTwin Biometric & SQL/Power BI Analytics Engine
 class PokedexAudio {
   constructor() {
     this.ctx = null;
@@ -84,13 +84,15 @@ const resultCard = document.getElementById('result-card');
 const inputSection = document.getElementById('input-section');
 const faceDetectPill = document.getElementById('face-detect-pill');
 const faceDetectMsg = document.getElementById('face-detect-msg');
+const trainerNameInput = document.getElementById('trainer-name-input');
 
 let currentStream = null;
 let currentImageSrc = null;
 let currentBestMatch = null;
 let currentTraits = null;
+let currentTrainerName = 'Trainer';
 let detectedExpression = 'neutral';
-let detectedEmotionConfidence = 0.85;
+let detectedEmotionConfidence = 85;
 let isShinyRoll = false;
 let modelsLoaded = false;
 let cameraAnimationId = null;
@@ -113,6 +115,14 @@ async function initFaceApi() {
   }
 }
 initFaceApi();
+
+// Load saved trainer name from memory
+if (localStorage.getItem('poketwin_trainer_name')) {
+  trainerNameInput.value = localStorage.getItem('poketwin_trainer_name');
+}
+trainerNameInput.addEventListener('input', () => {
+  localStorage.setItem('poketwin_trainer_name', trainerNameInput.value.trim());
+});
 
 // Drop zone events
 dropZone.addEventListener('dragover', (e) => {
@@ -190,7 +200,6 @@ function runLiveCameraHud() {
     if (!currentStream) return;
     ctx.clearRect(0, 0, faceHudCanvas.width, faceHudCanvas.height);
 
-    // Draw biometric futuristic brackets
     const cx = faceHudCanvas.width / 2;
     const cy = faceHudCanvas.height / 2;
     const boxSize = Math.min(faceHudCanvas.width, faceHudCanvas.height) * 0.55;
@@ -198,19 +207,13 @@ function runLiveCameraHud() {
     ctx.strokeStyle = '#06b6d4';
     ctx.lineWidth = 3;
     const s = boxSize / 2;
-
-    // Corner brackets
     const corner = 24;
-    // Top-Left
+
     ctx.beginPath(); ctx.moveTo(cx - s, cy - s + corner); ctx.lineTo(cx - s, cy - s); ctx.lineTo(cx - s + corner, cy - s); ctx.stroke();
-    // Top-Right
     ctx.beginPath(); ctx.moveTo(cx + s - corner, cy - s); ctx.lineTo(cx + s, cy - s); ctx.lineTo(cx + s, cy - s + corner); ctx.stroke();
-    // Bottom-Left
     ctx.beginPath(); ctx.moveTo(cx - s, cy + s - corner); ctx.lineTo(cx - s, cy + s); ctx.lineTo(cx - s + corner, cy + s); ctx.stroke();
-    // Bottom-Right
     ctx.beginPath(); ctx.moveTo(cx + s - corner, cy + s); ctx.lineTo(cx + s, cy + s); ctx.lineTo(cx + s, cy + s - corner); ctx.stroke();
 
-    // Center Crosshair
     ctx.fillStyle = 'rgba(6, 182, 212, 0.8)';
     ctx.fillRect(cx - 10, cy, 20, 1);
     ctx.fillRect(cx, cy - 10, 1, 20);
@@ -251,7 +254,7 @@ function stopCamera() {
   camToggleBtn.textContent = '📷 Take Live Selfie';
 }
 
-// Biometric & Expression Analysis (face-api + geometric heuristics)
+// Biometric & Expression Analysis
 async function analyzeFacialFrame(imgEl, overlayCanvas) {
   faceDetectPill.style.display = 'flex';
   faceDetectMsg.textContent = 'CALIBRATING FACIAL GEOMETRY & EXPRESSIONS...';
@@ -271,12 +274,10 @@ async function analyzeFacialFrame(imgEl, overlayCanvas) {
     }
   }
 
-  // Fallback to geometric facial analysis if neural model missed
   if (!expressionResult) {
     expressionResult = estimateGeometricExpression(imgEl);
   }
 
-  // Determine top expression
   let topExpr = 'neutral';
   let topScore = 0;
   for (const [expr, score] of Object.entries(expressionResult)) {
@@ -288,7 +289,6 @@ async function analyzeFacialFrame(imgEl, overlayCanvas) {
   detectedExpression = topExpr;
   detectedEmotionConfidence = Math.round(topScore * 100);
 
-  // Draw overlay on preview
   if (overlayCanvas) {
     overlayCanvas.width = imgEl.naturalWidth || 300;
     overlayCanvas.height = imgEl.naturalHeight || 300;
@@ -300,7 +300,6 @@ async function analyzeFacialFrame(imgEl, overlayCanvas) {
     const bw = faceBox ? faceBox.width : overlayCanvas.width * 0.6;
     const bh = faceBox ? faceBox.height : overlayCanvas.height * 0.65;
 
-    // Cyan HUD Box with corner markings
     ctx.strokeStyle = '#06b6d4';
     ctx.lineWidth = Math.max(2, overlayCanvas.width * 0.008);
     const cr = Math.min(bw, bh) * 0.15;
@@ -310,7 +309,6 @@ async function analyzeFacialFrame(imgEl, overlayCanvas) {
     ctx.beginPath(); ctx.moveTo(bx, by + bh - cr); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cr, by + bh); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(bx + bw - cr, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cr); ctx.stroke();
 
-    // Expression Label
     ctx.fillStyle = 'rgba(18, 19, 26, 0.85)';
     ctx.fillRect(bx, by - 26, 180, 22);
     ctx.fillStyle = '#38bdf8';
@@ -331,7 +329,6 @@ async function analyzeFacialFrame(imgEl, overlayCanvas) {
   faceDetectMsg.textContent = `DETECTED: ${exprEmoji}`;
 }
 
-// Geometric Fallback based on contrast, luminance & facial mouth/eye zone variances
 function estimateGeometricExpression(img) {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
@@ -340,7 +337,6 @@ function estimateGeometricExpression(img) {
   ctx.drawImage(img, 0, 0, 64, 64);
   const data = ctx.getImageData(0, 0, 64, 64).data;
 
-  // Measure mouth-region brightness (pixels in bottom third) vs eyes (middle third)
   let upperLum = 0, lowerLum = 0, upperCount = 0, lowerCount = 0;
   for (let y = 16; y < 36; y++) {
     for (let x = 16; x < 48; x++) {
@@ -361,7 +357,6 @@ function estimateGeometricExpression(img) {
   const avgLower = lowerLum / (lowerCount || 1);
   const mouthRatio = avgLower / (avgUpper || 1);
 
-  // If mouth area is significantly brighter (teeth exposure during smile)
   if (mouthRatio > 1.08) {
     return { happy: 0.88, neutral: 0.08, surprised: 0.04 };
   } else if (avgUpper < 80 && avgLower < 80) {
@@ -373,7 +368,6 @@ function estimateGeometricExpression(img) {
   }
 }
 
-// Preset Expressions Simulator
 function loadSampleExpression(type) {
   const canvas = document.createElement('canvas');
   canvas.width = 300;
@@ -382,31 +376,24 @@ function loadSampleExpression(type) {
 
   if (type === 'happy') {
     ctx.fillStyle = '#fef08a'; ctx.fillRect(0, 0, 300, 300);
-    // Face drawing
     ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
-    // Eyes
     ctx.fillStyle = '#1e293b';
     ctx.beginPath(); ctx.arc(120, 130, 10, 0, Math.PI * 2); ctx.arc(180, 130, 10, 0, Math.PI * 2); ctx.fill();
-    // Big Smile
     ctx.lineWidth = 8; ctx.strokeStyle = '#1e293b';
     ctx.beginPath(); ctx.arc(150, 150, 50, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
   } else if (type === 'calm') {
     ctx.fillStyle = '#bae6fd'; ctx.fillRect(0, 0, 300, 300);
     ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
-    // Relaxed sleepy eyes
     ctx.lineWidth = 6; ctx.strokeStyle = '#0369a1';
     ctx.beginPath(); ctx.arc(120, 140, 14, Math.PI, 0); ctx.stroke();
     ctx.beginPath(); ctx.arc(180, 140, 14, Math.PI, 0); ctx.stroke();
-    // Neutral gentle smile
     ctx.beginPath(); ctx.arc(150, 165, 20, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
   } else if (type === 'fierce') {
     ctx.fillStyle = '#fecaca'; ctx.fillRect(0, 0, 300, 300);
     ctx.fillStyle = '#f87171'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#1e293b';
-    // Sharp eyes
     ctx.beginPath(); ctx.moveTo(100, 130); ctx.lineTo(135, 140); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(200, 130); ctx.lineTo(165, 140); ctx.stroke();
-    // Focused mouth
     ctx.lineWidth = 6;
     ctx.beginPath(); ctx.moveTo(125, 190); ctx.lineTo(175, 190); ctx.stroke();
   } else if (type === 'mystic') {
@@ -420,17 +407,14 @@ function loadSampleExpression(type) {
     ctx.fillStyle = '#fed7aa'; ctx.fillRect(0, 0, 300, 300);
     ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
     ctx.lineWidth = 6; ctx.strokeStyle = '#431407';
-    // Winking eye
     ctx.beginPath(); ctx.arc(120, 135, 12, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
     ctx.fillStyle = '#431407'; ctx.beginPath(); ctx.arc(180, 135, 8, 0, Math.PI * 2); ctx.fill();
-    // Tongue smile
     ctx.beginPath(); ctx.arc(150, 165, 30, 0, Math.PI); ctx.stroke();
   } else if (type === 'surprised') {
     ctx.fillStyle = '#fef3c7'; ctx.fillRect(0, 0, 300, 300);
     ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#1e293b';
     ctx.beginPath(); ctx.arc(120, 125, 14, 0, Math.PI * 2); ctx.arc(180, 125, 14, 0, Math.PI * 2); ctx.fill();
-    // Big O mouth
     ctx.lineWidth = 6; ctx.strokeStyle = '#1e293b';
     ctx.beginPath(); ctx.arc(150, 180, 22, 0, Math.PI * 2); ctx.stroke();
   }
@@ -441,6 +425,7 @@ function loadSampleExpression(type) {
 // Scanning & Matching Workflow
 analyzeBtn.addEventListener('click', () => {
   if (!currentImageSrc) return;
+  currentTrainerName = trainerNameInput.value.trim() || 'Trainer';
   audio.init();
   startScanSequence();
 });
@@ -452,11 +437,11 @@ function startScanSequence() {
 
   let progress = 0;
   const messages = [
-    'PARSING BIOMETRIC FACIAL MESH...',
-    `ANALYZING EMOTIONAL EXPRESSION: ${detectedExpression.toUpperCase()}...`,
+    `AUTHENTICATING TRAINER: ${currentTrainerName.toUpperCase()}...`,
+    `PARSING BIOMETRIC FACIAL MESH: ${detectedExpression.toUpperCase()}...`,
     'EXTRACTING FACIAL CHROMATIC HARMONY...',
     'SYNCHRONIZING WITH SILPH CO. 151 CANON...',
-    'GENERATING POKÉTWIN PASSPORT...'
+    'WRITING EVENT TO SQL FACT TABLE...'
   ];
 
   const interval = setInterval(() => {
@@ -504,36 +489,24 @@ function executeMatching() {
   const minC = Math.min(avgR, avgG, avgB);
   const saturation = maxC === 0 ? 0 : (maxC - minC) / maxC;
 
-  // Base traits derived from colors
   let energy = Math.round((avgR * 0.45 + (1 - avgB / 255) * 50 + saturation * 40));
   let chill = Math.round(((avgB * 0.5 + avgG * 0.4) / 255) * 90 + 10);
   let cuteness = Math.round(((avgR + avgB) / 510) * 80 + 15);
   let mystery = Math.round((1 - avgLum / 255) * 65 + (avgB / 255) * 30);
   let bravery = Math.round((avgR / 255) * 60 + saturation * 35);
 
-  // Expression-based trait modifiers (Biometric accuracy upgrade)
   if (detectedExpression === 'happy') {
-    energy += 25;
-    cuteness += 30;
-    chill += 10;
+    energy += 25; cuteness += 30; chill += 10;
   } else if (detectedExpression === 'neutral') {
-    chill += 35;
-    mystery += 10;
-    energy -= 10;
+    chill += 35; mystery += 10; energy -= 10;
   } else if (detectedExpression === 'angry') {
-    bravery += 35;
-    energy += 20;
-    cuteness -= 15;
+    bravery += 35; energy += 20; cuteness -= 15;
   } else if (detectedExpression === 'surprised') {
-    energy += 35;
-    mystery += 15;
+    energy += 35; mystery += 15;
   } else if (detectedExpression === 'sad' || detectedExpression === 'fearful') {
-    mystery += 35;
-    chill += 15;
-    energy -= 15;
+    mystery += 35; chill += 15; energy -= 15;
   }
 
-  // Clamping traits
   energy = Math.min(99, Math.max(20, energy));
   chill = Math.min(99, Math.max(20, chill));
   cuteness = Math.min(99, Math.max(20, cuteness));
@@ -542,13 +515,9 @@ function executeMatching() {
 
   currentTraits = { energy, chill, cuteness, mystery, bravery, avgR, avgG, avgB };
 
-  // Score against 151 Pokémon combining:
-  // 1. Color Affinity (50%)
-  // 2. Personality/Expression Archetype Compatibility (50%)
   const ranked = KANTO_POKEDEX.map(p => {
     const colorDist = Math.hypot(avgR - p.c[0], avgG - p.c[1], avgB - p.c[2]);
 
-    // Archetype compatibility calculation
     let archetypeScore = 0;
     const isElectricOrFire = p.types.includes('Electric') || p.types.includes('Fire');
     const isWaterOrGrass = p.types.includes('Water') || p.types.includes('Grass');
@@ -562,7 +531,6 @@ function executeMatching() {
     if ((detectedExpression === 'sad' || detectedExpression === 'fearful') && isGhostOrPsychic) archetypeScore += 30;
     if (detectedExpression === 'surprised' && isElectricOrFire) archetypeScore += 30;
 
-    // Harmonized distance
     const finalDist = colorDist - (archetypeScore * 1.8);
     const sync = Math.round(Math.max(68, Math.min(99, 100 - (finalDist / 4.4))));
     return { p, dist: finalDist, sync };
@@ -572,6 +540,19 @@ function executeMatching() {
   const runners = [ranked[1], ranked[2], ranked[3]];
 
   isShinyRoll = Math.random() < 0.10;
+
+  // Log to Analytics Fact Pipeline (localStorage event store)
+  logScanEvent({
+    trainer_name: currentTrainerName,
+    pokemon_id: currentBestMatch.p.id,
+    pokemon_name: currentBestMatch.p.name,
+    primary_type: currentBestMatch.p.types[0],
+    sync_rate: currentBestMatch.sync,
+    is_shiny: isShinyRoll ? 1 : 0,
+    emotion: detectedExpression,
+    traits: currentTraits
+  });
+
   displayResults(currentBestMatch, runners, currentTraits);
 }
 
@@ -592,7 +573,9 @@ function displayResults(top, runners, traits) {
   document.getElementById('pokemon-id').textContent = `#${padId}`;
   document.getElementById('pokemon-name').textContent = p.name;
   document.getElementById('match-score-badge').textContent = `BIOMETRIC SYNC: ${top.sync}%`;
-  document.getElementById('result-headline').textContent = `Your Kanto Spirit Twin is ${p.name}!`;
+  document.getElementById('result-headline').textContent = `${currentTrainerName}, your Kanto Spirit Twin is ${p.name}!`;
+  document.getElementById('trainer-tag-display').textContent = `TRAINER ID: ${currentTrainerName.toUpperCase()}`;
+  document.getElementById('spec-trainer-name').textContent = currentTrainerName;
   document.getElementById('pokemon-lore').textContent = p.lore;
   document.getElementById('pokemon-nature').textContent = p.nature;
   document.getElementById('pokemon-move').textContent = p.move;
@@ -683,7 +666,7 @@ function resetScan() {
   faceDetectPill.style.display = 'none';
 }
 
-// Download Collectible Passport
+// Download Collectible Passport with Trainer Name
 document.getElementById('download-card-btn').addEventListener('click', () => {
   if (!currentBestMatch || !preview.src) return;
   const canvas = document.createElement('canvas');
@@ -691,14 +674,12 @@ document.getElementById('download-card-btn').addEventListener('click', () => {
   canvas.height = 520;
   const ctx = canvas.getContext('2d');
 
-  // Background
   const grad = ctx.createLinearGradient(0, 0, 800, 520);
   grad.addColorStop(0, '#181926');
   grad.addColorStop(1, '#0f111a');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 800, 520);
 
-  // Border & Header
   ctx.strokeStyle = '#dc2626';
   ctx.lineWidth = 6;
   ctx.strokeRect(10, 10, 780, 500);
@@ -710,10 +691,9 @@ document.getElementById('download-card-btn').addEventListener('click', () => {
   ctx.font = 'bold 24px Chakra Petch, sans-serif';
   ctx.fillText('POKÉTWIN BIOMETRIC PASSPORT', 30, 48);
 
-  ctx.font = '16px Press Start 2P, monospace';
+  ctx.font = '14px Press Start 2P, monospace';
   ctx.fillText('KANTO #151', 630, 48);
 
-  // User Photo
   const uImg = new Image();
   uImg.crossOrigin = 'anonymous';
   uImg.onload = () => {
@@ -722,7 +702,6 @@ document.getElementById('download-card-btn').addEventListener('click', () => {
     ctx.lineWidth = 3;
     ctx.strokeRect(40, 100, 200, 200);
 
-    // Pokémon Art
     const pImg = new Image();
     pImg.crossOrigin = 'anonymous';
     pImg.onload = () => {
@@ -731,33 +710,35 @@ document.getElementById('download-card-btn').addEventListener('click', () => {
       ctx.lineWidth = 3;
       ctx.strokeRect(270, 100, 200, 200);
 
-      // Info Texts
+      // Info Texts with Trainer Identification
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 28px Chakra Petch, sans-serif';
       ctx.fillText(`${currentBestMatch.p.name} (#${String(currentBestMatch.p.id).padStart(3, '0')})`, 500, 130);
 
-      ctx.font = '16px Plus Jakarta Sans, sans-serif';
+      ctx.font = 'bold 16px Chakra Petch, sans-serif';
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(`TRAINER: ${currentTrainerName.toUpperCase()}`, 500, 160);
+
+      ctx.font = '15px Plus Jakarta Sans, sans-serif';
       ctx.fillStyle = '#4ade80';
-      ctx.fillText(`Sync: ${currentBestMatch.sync}% | Mood: ${detectedExpression.toUpperCase()}`, 500, 165);
+      ctx.fillText(`Sync: ${currentBestMatch.sync}% | Mood: ${detectedExpression.toUpperCase()}`, 500, 190);
 
       ctx.fillStyle = '#cbd5e1';
-      ctx.fillText(`Types: ${currentBestMatch.p.types.join(' / ')}`, 500, 195);
-      ctx.fillText(`Nature: ${currentBestMatch.p.nature}`, 500, 225);
-      ctx.fillText(`Signature Move: ${currentBestMatch.p.move}`, 500, 255);
+      ctx.fillText(`Types: ${currentBestMatch.p.types.join(' / ')}`, 500, 220);
+      ctx.fillText(`Nature: ${currentBestMatch.p.nature}`, 500, 248);
+      ctx.fillText(`Signature: ${currentBestMatch.p.move}`, 500, 276);
 
-      // Traits Footer
       ctx.fillStyle = '#94a3b8';
       ctx.font = '14px Chakra Petch, sans-serif';
       ctx.fillText(`ENERGY: ${currentTraits.energy}%  |  CHILL: ${currentTraits.chill}%  |  CUTENESS: ${currentTraits.cuteness}%`, 40, 340);
       ctx.fillText(`MYSTERY: ${currentTraits.mystery}%  |  BRAVERY: ${currentTraits.bravery}%`, 40, 370);
 
-      // Footer branding
       ctx.fillStyle = '#64748b';
       ctx.font = '12px Press Start 2P, monospace';
-      ctx.fillText('FACIAL LANDMARKS & BIOMETRICS VERIFIED - SILPH CO.', 40, 440);
+      ctx.fillText(`ISSUED TO TRAINER: ${currentTrainerName.toUpperCase()} • SILPH CO.`, 40, 440);
 
       const a = document.createElement('a');
-      a.download = `PokéTwin-Biometric-${currentBestMatch.p.name}.png`;
+      a.download = `PokéTwin-${currentTrainerName}-${currentBestMatch.p.name}.png`;
       a.href = canvas.toDataURL('image/png');
       a.click();
     };
@@ -771,14 +752,186 @@ document.getElementById('share-summary-btn').addEventListener('click', () => {
   if (!currentBestMatch) return;
   const p = currentBestMatch.p;
   const text = `⚡ PokéTwin Facial Biometric Match!
+Trainer: ${currentTrainerName}
 Detected Mood: ${detectedExpression.toUpperCase()} (${detectedEmotionConfidence}%)
-My Kanto Spirit Twin is #${String(p.id).padStart(3, '0')} ${p.name} (${p.types.join('/')}) with a ${currentBestMatch.sync}% sync rate!
+Spirit Twin: #${String(p.id).padStart(3, '0')} ${p.name} (${p.types.join('/')}) with a ${currentBestMatch.sync}% sync rate!
 Nature: ${p.nature} | Move: ${p.move}
 "${p.lore}"`;
   navigator.clipboard.writeText(text).then(() => {
     alert('PokéTwin biometric summary copied to clipboard!');
   });
 });
+
+// =====================================================================
+// SQL & POWER BI ANALYTICS EVENT STORE PIPELINE
+// =====================================================================
+function getStoredScans() {
+  try {
+    const raw = localStorage.getItem('poketwin_analytics_fact');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function logScanEvent(evt) {
+  const scans = getStoredScans();
+  const newRecord = {
+    scan_id: 'SCN-' + (10000 + scans.length + 1),
+    trainer_name: evt.trainer_name,
+    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    emotion: evt.emotion,
+    pokemon_id: evt.pokemon_id,
+    pokemon_name: evt.pokemon_name,
+    primary_type: evt.primary_type,
+    sync_rate: evt.sync_rate,
+    is_shiny: evt.is_shiny,
+    energy: evt.traits.energy,
+    chill: evt.traits.chill,
+    cuteness: evt.traits.cuteness,
+    mystery: evt.traits.mystery,
+    bravery: evt.traits.bravery,
+    card_downloaded: 0
+  };
+  scans.unshift(newRecord);
+  if (scans.length > 200) scans.pop();
+  localStorage.setItem('poketwin_analytics_fact', JSON.stringify(scans));
+}
+
+// Analytics Modal & Export Handlers
+const analyticsModal = document.getElementById('analytics-modal');
+const openAnalyticsBtn = document.getElementById('open-analytics-btn');
+const analyticsCloseBtn = document.getElementById('analytics-close-btn');
+
+openAnalyticsBtn.addEventListener('click', openAnalyticsModal);
+analyticsCloseBtn.addEventListener('click', () => { analyticsModal.style.display = 'none'; });
+
+function openAnalyticsModal() {
+  analyticsModal.style.display = 'block';
+  renderAnalyticsDashboard();
+}
+
+function renderAnalyticsDashboard() {
+  const scans = getStoredScans();
+  document.getElementById('kpi-total-scans').textContent = scans.length;
+
+  const trainers = new Set(scans.map(s => s.trainer_name));
+  document.getElementById('kpi-unique-trainers').textContent = trainers.size;
+
+  if (scans.length > 0) {
+    const avgSync = Math.round(scans.reduce((acc, s) => acc + s.sync_rate, 0) / scans.length);
+    document.getElementById('kpi-avg-sync').textContent = avgSync + '%';
+    const shinies = scans.filter(s => s.is_shiny === 1).length;
+    document.getElementById('kpi-shiny-count').textContent = shinies;
+  } else {
+    document.getElementById('kpi-avg-sync').textContent = '0%';
+    document.getElementById('kpi-shiny-count').textContent = '0';
+  }
+
+  const tbody = document.getElementById('analytics-tbody');
+  tbody.innerHTML = '';
+  if (scans.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 16px;">No scans recorded yet. Run a selfie scan to generate live data!</td></tr>';
+    return;
+  }
+
+  scans.slice(0, 15).forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family: monospace; color: #38bdf8;">${s.scan_id}</td>
+      <td style="font-weight: 700;">${s.trainer_name}</td>
+      <td style="color: #94a3b8; font-size: 11px;">${s.timestamp}</td>
+      <td><span style="text-transform: capitalize;">${s.emotion}</span></td>
+      <td>#${String(s.pokemon_id).padStart(3, '0')} ${s.pokemon_name}</td>
+      <td style="font-family: monospace; color: #4ade80;">${s.sync_rate}%</td>
+      <td>${s.is_shiny ? '✨ Yes' : 'No'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('clear-data-btn').addEventListener('click', () => {
+  if (confirm('Clear local scan analytics log?')) {
+    localStorage.removeItem('poketwin_analytics_fact');
+    renderAnalyticsDashboard();
+  }
+});
+
+// 1-Click CSV & SQL Exporters
+document.getElementById('export-fact-csv-btn').addEventListener('click', () => {
+  const scans = getStoredScans();
+  if (scans.length === 0) {
+    alert('No scan events recorded yet! Perform a scan first.');
+    return;
+  }
+  const headers = ['scan_id', 'trainer_name', 'scan_timestamp', 'detected_emotion', 'matched_pokemon_id', 'matched_pokemon_name', 'primary_type', 'sync_rate_pct', 'is_shiny', 'energy_score', 'chill_score', 'cuteness_score', 'mystery_score', 'bravery_score'];
+  let csv = headers.join(',') + '\n';
+  scans.forEach(s => {
+    csv += `${s.scan_id},"${s.trainer_name}","${s.timestamp}","${s.emotion}",${s.pokemon_id},"${s.pokemon_name}","${s.primary_type}",${s.sync_rate},${s.is_shiny},${s.energy},${s.chill},${s.cuteness},${s.mystery},${s.bravery}\n`;
+  });
+  downloadFile(csv, 'poketwin_fact_user_scans.csv', 'text/csv');
+});
+
+document.getElementById('export-dim-csv-btn').addEventListener('click', () => {
+  const headers = ['pokedex_id', 'name', 'primary_type', 'secondary_type', 'rgb_r', 'rgb_g', 'rgb_b', 'nature', 'signature_move', 'lore'];
+  let csv = headers.join(',') + '\n';
+  KANTO_POKEDEX.forEach(p => {
+    const sec = p.types[1] ? `"${p.types[1]}"` : '';
+    csv += `${p.id},"${p.name}","${p.types[0]}",${sec},${p.c[0]},${p.c[1]},${p.c[2]},"${p.nature}","${p.move}","${p.lore.replace(/"/g, '""')}"\n`;
+  });
+  downloadFile(csv, 'poketwin_dim_pokemon.csv', 'text/csv');
+});
+
+document.getElementById('export-sql-btn').addEventListener('click', () => {
+  const sql = `-- PokéTwin Relational Schema & Analytical Queries
+CREATE TABLE dim_pokemon (
+    pokedex_id INT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    primary_type VARCHAR(30) NOT NULL,
+    secondary_type VARCHAR(30),
+    nature VARCHAR(30),
+    signature_move VARCHAR(60),
+    lore TEXT
+);
+
+CREATE TABLE fact_user_scans (
+    scan_id VARCHAR(20) PRIMARY KEY,
+    trainer_name VARCHAR(50) NOT NULL,
+    scan_timestamp TIMESTAMP NOT NULL,
+    detected_emotion VARCHAR(30) NOT NULL,
+    matched_pokemon_id INT NOT NULL,
+    sync_rate_pct DECIMAL(5,2),
+    is_shiny INT DEFAULT 0,
+    energy_score INT,
+    chill_score INT,
+    cuteness_score INT,
+    mystery_score INT,
+    bravery_score INT,
+    CONSTRAINT fk_pokemon FOREIGN KEY (matched_pokemon_id) REFERENCES dim_pokemon(pokedex_id)
+);
+
+-- Analytical Query: Top Matched Pokémon Twins
+SELECT 
+    p.pokedex_id, p.name, p.primary_type,
+    COUNT(s.scan_id) AS total_matches,
+    ROUND(100.0 * COUNT(s.scan_id) / SUM(COUNT(s.scan_id)) OVER(), 2) AS match_share_pct,
+    ROUND(AVG(s.sync_rate_pct), 2) AS avg_sync_pct,
+    SUM(s.is_shiny) AS shiny_count
+FROM fact_user_scans s
+JOIN dim_pokemon p ON s.matched_pokemon_id = p.pokedex_id
+GROUP BY p.pokedex_id, p.name, p.primary_type
+ORDER BY total_matches DESC;
+`;
+  downloadFile(sql, 'poketwin_schema_queries.sql', 'text/plain');
+});
+
+function downloadFile(content, fileName, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+}
 
 // 151 Pokédex Modal / Drawer functionality
 const modal = document.getElementById('pokedex-modal');
@@ -793,7 +946,10 @@ openModalBtn.addEventListener('click', () => {
   renderModalRoster();
 });
 closeModalBtn.addEventListener('click', () => modal.style.display = 'none');
-window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+window.addEventListener('click', (e) => {
+  if (e.target === modal) modal.style.display = 'none';
+  if (e.target === analyticsModal) analyticsModal.style.display = 'none';
+});
 
 function renderModalRoster() {
   const query = searchInput.value.toLowerCase().trim();
@@ -819,6 +975,7 @@ function renderModalRoster() {
     `;
     el.addEventListener('click', () => {
       modal.style.display = 'none';
+      currentTrainerName = trainerNameInput.value.trim() || 'Trainer';
       displayResults({ p, sync: 100, dist: 0 }, [
         { p: KANTO_POKEDEX[(p.id) % 151], sync: 94 },
         { p: KANTO_POKEDEX[(p.id + 1) % 151], sync: 88 },
