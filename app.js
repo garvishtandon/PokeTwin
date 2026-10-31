@@ -9,11 +9,12 @@ class PokedexAudio {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioContext();
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
   }
   playChirp(freq = 880, dur = 0.08) {
     try {
       this.init();
+      if (!this.ctx) return;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'square';
@@ -27,6 +28,7 @@ class PokedexAudio {
   playScanSweep() {
     try {
       this.init();
+      if (!this.ctx) return;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sawtooth';
@@ -41,6 +43,7 @@ class PokedexAudio {
   playFanfare(shiny = false) {
     try {
       this.init();
+      if (!this.ctx) return;
       const notes = shiny ? [523, 659, 784, 1046, 1318, 1568] : [440, 554, 659, 880];
       notes.forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
@@ -59,29 +62,33 @@ class PokedexAudio {
 
 const audio = new PokedexAudio();
 
+// Safe DOM Helper functions to prevent null reference crashes
+function $(id) { return document.getElementById(id); }
+function safeSetText(id, text) { const el = $(id); if (el) el.textContent = text; }
+
 // Elements
-const fileInput = document.getElementById('file-input');
-const dropZone = document.getElementById('drop-zone');
-const preview = document.getElementById('preview');
-const previewBox = document.getElementById('preview-box');
-const previewOverlay = document.getElementById('preview-overlay-canvas');
-const video = document.getElementById('video');
-const videoWrap = document.getElementById('video-wrap');
-const faceHudCanvas = document.getElementById('face-hud-canvas');
-const analyzeBtn = document.getElementById('analyze-btn');
-const camToggleBtn = document.getElementById('cam-toggle-btn');
-const captureBtn = document.getElementById('capture-btn');
-const scanOverlay = document.getElementById('scan-overlay');
-const scanProgress = document.getElementById('scan-progress');
-const scanStatusText = document.getElementById('scan-status-text');
-const resultCard = document.getElementById('result-card');
-const inputSection = document.getElementById('input-section');
-const faceDetectPill = document.getElementById('face-detect-pill');
-const faceDetectMsg = document.getElementById('face-detect-msg');
-const trainerNameInput = document.getElementById('trainer-name-input');
-const trainerIdInput = document.getElementById('trainer-id-input');
-const rollIdBtn = document.getElementById('roll-id-btn');
-const fireredCanvas = document.getElementById('firered-card-canvas');
+const fileInput = $('file-input');
+const dropZone = $('drop-zone');
+const preview = $('preview');
+const previewBox = $('preview-box');
+const previewOverlay = $('preview-overlay-canvas');
+const video = $('video');
+const videoWrap = $('video-wrap');
+const faceHudCanvas = $('face-hud-canvas');
+const analyzeBtn = $('analyze-btn');
+const camToggleBtn = $('cam-toggle-btn');
+const captureBtn = $('capture-btn');
+const scanOverlay = $('scan-overlay');
+const scanProgress = $('scan-progress');
+const scanStatusText = $('scan-status-text');
+const resultCard = $('result-card');
+const inputSection = $('input-section');
+const faceDetectPill = $('face-detect-pill');
+const faceDetectMsg = $('face-detect-msg');
+const trainerNameInput = $('trainer-name-input');
+const trainerIdInput = $('trainer-id-input');
+const rollIdBtn = $('roll-id-btn');
+const fireredCanvas = $('firered-card-canvas');
 
 let currentStream = null;
 let currentImageSrc = null;
@@ -96,7 +103,7 @@ let isShinyRoll = false;
 let modelsLoaded = false;
 let cameraAnimationId = null;
 
-// Initialize face-api
+// Initialize face-api safely
 async function initFaceApi() {
   try {
     if (window.faceapi) {
@@ -130,7 +137,7 @@ if (trainerIdInput) {
 if (rollIdBtn) {
   rollIdBtn.addEventListener('click', () => {
     const newId = generateRandomTrainerId();
-    trainerIdInput.value = newId;
+    if (trainerIdInput) trainerIdInput.value = newId;
     localStorage.setItem('poketwin_trainer_id', newId);
     audio.playChirp(1040, 0.05);
   });
@@ -146,16 +153,21 @@ if (trainerNameInput) {
 }
 
 // Dropzone & File Handlers
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault(); dropZone.classList.remove('dragover');
-  if (e.dataTransfer.files && e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0]);
-});
-dropZone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  if (fileInput.files && fileInput.files[0]) handleImageFile(fileInput.files[0]);
-});
+if (dropZone) {
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0]);
+  });
+  dropZone.addEventListener('click', () => fileInput && fileInput.click());
+}
+
+if (fileInput) {
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files[0]) handleImageFile(fileInput.files[0]);
+  });
+}
 
 function handleImageFile(file) {
   if (!file.type.startsWith('image/')) return;
@@ -166,34 +178,38 @@ function handleImageFile(file) {
 
 function loadPreview(src) {
   currentImageSrc = src;
-  preview.src = src;
-  previewBox.style.display = 'block';
-  analyzeBtn.disabled = false;
+  if (preview) preview.src = src;
+  if (previewBox) previewBox.style.display = 'block';
+  if (analyzeBtn) analyzeBtn.disabled = false;
   stopCamera();
   audio.playChirp(700, 0.05);
-  preview.onload = () => { analyzeFacialFrame(preview, previewOverlay); };
+  if (preview) {
+    preview.onload = () => { analyzeFacialFrame(preview, previewOverlay); };
+  }
 }
 
 // Webcam support
-camToggleBtn.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  if (currentStream) { stopCamera(); return; }
-  try {
-    currentStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false
-    });
-    video.srcObject = currentStream;
-    videoWrap.style.display = 'block';
-    camToggleBtn.textContent = '❌ Stop Camera';
-    audio.playChirp(900, 0.06);
-    video.onloadedmetadata = () => { runLiveCameraHud(); };
-  } catch (err) {
-    alert('Camera unavailable. Check permissions or upload a portrait photo.');
-  }
-});
+if (camToggleBtn) {
+  camToggleBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (currentStream) { stopCamera(); return; }
+    try {
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false
+      });
+      if (video) video.srcObject = currentStream;
+      if (videoWrap) videoWrap.style.display = 'block';
+      camToggleBtn.textContent = '❌ Stop Camera';
+      audio.playChirp(900, 0.06);
+      if (video) video.onloadedmetadata = () => { runLiveCameraHud(); };
+    } catch (err) {
+      alert('Camera unavailable. Check permissions or upload a portrait photo.');
+    }
+  });
+}
 
 function runLiveCameraHud() {
-  if (!currentStream) return;
+  if (!currentStream || !faceHudCanvas || !video) return;
   faceHudCanvas.width = video.videoWidth || 640;
   faceHudCanvas.height = video.videoHeight || 480;
   const ctx = faceHudCanvas.getContext('2d');
@@ -210,7 +226,7 @@ function runLiveCameraHud() {
     ctx.beginPath(); ctx.moveTo(cx - s, cy - s + corner); ctx.lineTo(cx - s, cy - s); ctx.lineTo(cx - s + corner, cy - s); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx + s - corner, cy - s); ctx.lineTo(cx + s, cy - s); ctx.lineTo(cx + s, cy - s + corner); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx - s, cy + s - corner); ctx.lineTo(cx - s, cy + s); ctx.lineTo(cx - s + corner, cy + s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx + s - corner, cy + s); ctx.lineTo(cx + s, cy + s); ctx.lineTo(cx + s, cy + s - corner); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + s - corner, cy + s); ctx.lineTo(cx + s, cy + s); ctx.lineTo(cx + s, cy - s + corner); ctx.stroke();
 
     ctx.fillStyle = 'rgba(6, 182, 212, 0.8)';
     ctx.fillRect(cx - 10, cy, 20, 1); ctx.fillRect(cx, cy - 10, 1, 20);
@@ -219,29 +235,31 @@ function runLiveCameraHud() {
   renderHud();
 }
 
-captureBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (!video.videoWidth) return;
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0);
-  loadPreview(canvas.toDataURL('image/jpeg', 0.94));
-  stopCamera();
-});
+if (captureBtn) {
+  captureBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+    loadPreview(canvas.toDataURL('image/jpeg', 0.94));
+    stopCamera();
+  });
+}
 
 function stopCamera() {
   if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
   if (cameraAnimationId) { cancelAnimationFrame(cameraAnimationId); cameraAnimationId = null; }
-  videoWrap.style.display = 'none';
-  camToggleBtn.textContent = '📷 Take Live Selfie';
+  if (videoWrap) videoWrap.style.display = 'none';
+  if (camToggleBtn) camToggleBtn.textContent = '📷 Take Live Selfie';
 }
 
 // Biometric Feature Extractor
 async function analyzeFacialFrame(imgEl, overlayCanvas) {
-  faceDetectPill.style.display = 'flex';
-  faceDetectMsg.textContent = 'CALIBRATING FACIAL GEOMETRY & EXPRESSIONS...';
+  if (faceDetectPill) faceDetectPill.style.display = 'flex';
+  safeSetText('face-detect-msg', 'CALIBRATING FACIAL GEOMETRY & EXPRESSIONS...');
 
   let faceBox = null;
   let expressionResult = null;
@@ -289,7 +307,7 @@ async function analyzeFacialFrame(imgEl, overlayCanvas) {
     happy: '😄 RADIANT JOY', neutral: '😌 CALM / ZEN', angry: '😠 FIERCE / BOLD',
     surprised: '😲 HIGH ENERGY', sad: '🌧️ DEEP MYSTIC', fearful: '🔮 ENIGMATIC AURA'
   }[detectedExpression] || '✨ CHARISMATIC';
-  faceDetectMsg.textContent = `DETECTED: ${exprEmoji}`;
+  safeSetText('face-detect-msg', `DETECTED: ${exprEmoji}`);
 }
 
 function estimateGeometricExpression(img) {
@@ -319,6 +337,59 @@ function estimateGeometricExpression(img) {
   return { neutral: 0.82, happy: 0.1, angry: 0.08 };
 }
 
+function loadSampleExpression(type) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300; canvas.height = 300;
+  const ctx = canvas.getContext('2d');
+
+  if (type === 'happy') {
+    ctx.fillStyle = '#fef08a'; ctx.fillRect(0, 0, 300, 300);
+    ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.arc(120, 130, 10, 0, Math.PI * 2); ctx.arc(180, 130, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 8; ctx.strokeStyle = '#1e293b';
+    ctx.beginPath(); ctx.arc(150, 150, 50, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+  } else if (type === 'calm') {
+    ctx.fillStyle = '#bae6fd'; ctx.fillRect(0, 0, 300, 300);
+    ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = '#0369a1';
+    ctx.beginPath(); ctx.arc(120, 140, 14, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(180, 140, 14, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(150, 165, 20, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+  } else if (type === 'fierce') {
+    ctx.fillStyle = '#fecaca'; ctx.fillRect(0, 0, 300, 300);
+    ctx.fillStyle = '#f87171'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.moveTo(100, 130); ctx.lineTo(135, 140); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(200, 130); ctx.lineTo(165, 140); ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(125, 190); ctx.lineTo(175, 190); ctx.stroke();
+  } else if (type === 'mystic') {
+    ctx.fillStyle = '#e9d5ff'; ctx.fillRect(0, 0, 300, 300);
+    ctx.fillStyle = '#c084fc'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#581c87';
+    ctx.beginPath(); ctx.arc(120, 135, 8, 0, Math.PI * 2); ctx.arc(180, 135, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 5; ctx.strokeStyle = '#581c87';
+    ctx.beginPath(); ctx.arc(150, 180, 16, Math.PI, 0); ctx.stroke();
+  } else if (type === 'playful') {
+    ctx.fillStyle = '#fed7aa'; ctx.fillRect(0, 0, 300, 300);
+    ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = '#431407';
+    ctx.beginPath(); ctx.arc(120, 135, 12, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+    ctx.fillStyle = '#431407'; ctx.beginPath(); ctx.arc(180, 135, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(150, 165, 30, 0, Math.PI); ctx.stroke();
+  } else if (type === 'surprised') {
+    ctx.fillStyle = '#fef3c7'; ctx.fillRect(0, 0, 300, 300);
+    ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(150, 150, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.arc(120, 125, 14, 0, Math.PI * 2); ctx.arc(180, 125, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = '#1e293b';
+    ctx.beginPath(); ctx.arc(150, 180, 22, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  loadPreview(canvas.toDataURL('image/jpeg', 0.94));
+}
+
 // 32-bit FNV-1a Hash for Deterministic Trainer Biometric Consistency
 function getBiometricHash(str) {
   let h = 2166136261;
@@ -332,22 +403,24 @@ function getBiometricHash(str) {
 // =====================================================================
 // MATCHING ENGINE: 100% 151 COVERAGE + RESCAN CONSISTENCY
 // =====================================================================
-analyzeBtn.addEventListener('click', () => {
-  if (!currentImageSrc) return;
-  currentTrainerName = (trainerNameInput ? trainerNameInput.value.trim() : '') || 'Trainer';
-  currentTrainerId = (trainerIdInput ? trainerIdInput.value.trim() : '') || generateRandomTrainerId();
-  
-  const now = new Date();
-  currentScanTimeStr = `${String(now.getHours()).padStart(2, '0')} ${String(now.getMinutes()).padStart(2, '0')}`;
-  
-  audio.init();
-  startScanSequence();
-});
+if (analyzeBtn) {
+  analyzeBtn.addEventListener('click', () => {
+    if (!currentImageSrc) return;
+    currentTrainerName = (trainerNameInput ? trainerNameInput.value.trim() : '') || 'Trainer';
+    currentTrainerId = (trainerIdInput ? trainerIdInput.value.trim() : '') || generateRandomTrainerId();
+    
+    const now = new Date();
+    currentScanTimeStr = `${String(now.getHours()).padStart(2, '0')} ${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    audio.init();
+    startScanSequence();
+  });
+}
 
 function startScanSequence() {
-  inputSection.style.display = 'none';
-  resultCard.style.display = 'none';
-  scanOverlay.style.display = 'block';
+  if (inputSection) inputSection.style.display = 'none';
+  if (resultCard) resultCard.style.display = 'none';
+  if (scanOverlay) scanOverlay.style.display = 'block';
 
   let progress = 0;
   const messages = [
@@ -360,17 +433,23 @@ function startScanSequence() {
 
   const interval = setInterval(() => {
     progress += 20;
-    scanProgress.style.width = progress + '%';
+    if (scanProgress) scanProgress.style.width = progress + '%';
     const msgIdx = Math.min(Math.floor(progress / 20), messages.length - 1);
-    scanStatusText.textContent = messages[msgIdx];
+    safeSetText('scan-status-text', messages[msgIdx]);
     audio.playScanSweep();
 
     if (progress >= 100) {
       clearInterval(interval);
       setTimeout(() => {
-        executeMatching();
-        scanOverlay.style.display = 'none';
-        resultCard.style.display = 'block';
+        try {
+          executeMatching();
+        } catch (err) {
+          console.error('Error during matching execution:', err);
+        } finally {
+          // ALWAYS ensure loading overlay hides and results display!
+          if (scanOverlay) scanOverlay.style.display = 'none';
+          if (resultCard) resultCard.style.display = 'block';
+        }
       }, 300);
     }
   }, 220);
@@ -380,7 +459,7 @@ function executeMatching() {
   const canvas = document.createElement('canvas');
   canvas.width = 80; canvas.height = 80;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(preview, 0, 0, 80, 80);
+  if (preview) ctx.drawImage(preview, 0, 0, 80, 80);
   const imgData = ctx.getImageData(0, 0, 80, 80).data;
 
   let upperLum = 0, lowerLum = 0, totalLum = 0, count = 0;
@@ -498,41 +577,45 @@ function displayResults(top, runners, traits) {
 
   const fallbackSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`;
 
-  const imgEl = document.getElementById('pokemon-img');
-  imgEl.src = artUrl;
-  imgEl.onerror = () => { imgEl.src = fallbackSprite; };
+  const imgEl = $('pokemon-img');
+  if (imgEl) {
+    imgEl.src = artUrl;
+    imgEl.onerror = () => { imgEl.src = fallbackSprite; };
+  }
 
-  document.getElementById('pokemon-id').textContent = `#${padId}`;
-  document.getElementById('pokemon-name').textContent = p.name;
-  document.getElementById('match-score-badge').textContent = `KANTO SYNC: ${top.sync}%`;
-  document.getElementById('result-headline').textContent = `${currentTrainerName}, your Kanto Spirit Twin is ${p.name}!`;
-  document.getElementById('trainer-tag-display').textContent = `TRAINER: ${currentTrainerName.toUpperCase()} • IDNo. ${currentTrainerId}`;
-  document.getElementById('spec-trainer-name').textContent = currentTrainerName;
-  document.getElementById('spec-trainer-id').textContent = currentTrainerId;
-  document.getElementById('spec-scan-time').textContent = currentScanTimeStr;
-  document.getElementById('pokemon-lore').textContent = p.lore;
-  document.getElementById('pokemon-nature').textContent = p.nature;
-  document.getElementById('pokemon-move').textContent = p.move;
+  safeSetText('pokemon-id', `#${padId}`);
+  safeSetText('pokemon-name', p.name);
+  safeSetText('match-score-badge', `KANTO SYNC: ${top.sync}%`);
+  safeSetText('result-headline', `${currentTrainerName}, your Kanto Spirit Twin is ${p.name}!`);
+  safeSetText('trainer-tag-display', `TRAINER: ${currentTrainerName.toUpperCase()} • IDNo. ${currentTrainerId}`);
+  safeSetText('spec-trainer-name', currentTrainerName);
+  safeSetText('spec-trainer-id', currentTrainerId);
+  safeSetText('spec-scan-time', currentScanTimeStr);
+  safeSetText('pokemon-lore', p.lore);
+  safeSetText('pokemon-nature', p.nature);
+  safeSetText('pokemon-move', p.move);
 
   const expressionLabels = {
     happy: '😄 Joyous Radiance', neutral: '😌 Zen Equilibrium', angry: '😠 Fierce Resolve',
     surprised: '😲 Electric Awe', sad: '🌧️ Mystic Depth', fearful: '🔮 Enigmatic Aura'
   };
-  document.getElementById('detected-expression-badge').textContent = `EXPRESSION: ${expressionLabels[detectedExpression] || '✨ CHARISMATIC'}`;
+  safeSetText('detected-expression-badge', `EXPRESSION: ${expressionLabels[detectedExpression] || '✨ CHARISMATIC'}`);
 
-  const shinyTag = document.getElementById('shiny-tag');
-  shinyTag.style.display = isShinyRoll ? 'block' : 'none';
+  const shinyTag = $('shiny-tag');
+  if (shinyTag) shinyTag.style.display = isShinyRoll ? 'block' : 'none';
 
-  const typesContainer = document.getElementById('pokemon-types');
-  typesContainer.innerHTML = '';
-  p.types.forEach(t => {
-    const b = document.createElement('span');
-    b.className = 'type-badge';
-    b.textContent = t;
-    b.style.backgroundColor = TYPE_COLORS[t] || '#777';
-    b.style.color = '#fff';
-    typesContainer.appendChild(b);
-  });
+  const typesContainer = $('pokemon-types');
+  if (typesContainer) {
+    typesContainer.innerHTML = '';
+    p.types.forEach(t => {
+      const b = document.createElement('span');
+      b.className = 'type-badge';
+      b.textContent = t;
+      b.style.backgroundColor = TYPE_COLORS[t] || '#777';
+      b.style.color = '#fff';
+      typesContainer.appendChild(b);
+    });
+  }
 
   setTraitMeter('trait-energy', traits.energy);
   setTraitMeter('trait-chill', traits.chill);
@@ -540,44 +623,46 @@ function displayResults(top, runners, traits) {
   setTraitMeter('trait-mystery', traits.mystery);
   setTraitMeter('trait-bravery', traits.bravery);
 
-  const runnersBox = document.getElementById('runners-container');
-  runnersBox.innerHTML = '';
-  runners.forEach(r => {
-    const item = document.createElement('div');
-    item.className = 'runner-card';
-    const rId = String(r.p.id).padStart(3, '0');
-    const rSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${r.p.id}.png`;
-    item.innerHTML = `
-      <img src="${rSprite}" alt="${r.p.name}">
-      <div>
-        <div class="runner-name">#${rId} ${r.p.name}</div>
-        <div class="runner-sync">${r.sync}% RESONANCE</div>
-      </div>
-    `;
-    runnersBox.appendChild(item);
-  });
+  const runnersBox = $('runners-container');
+  if (runnersBox) {
+    runnersBox.innerHTML = '';
+    runners.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'runner-card';
+      const rId = String(r.p.id).padStart(3, '0');
+      const rSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${r.p.id}.png`;
+      item.innerHTML = `
+        <img src="${rSprite}" alt="${r.p.name}">
+        <div>
+          <div class="runner-name">#${rId} ${r.p.name}</div>
+          <div class="runner-sync">${r.sync}% RESONANCE</div>
+        </div>
+      `;
+      runnersBox.appendChild(item);
+    });
+  }
 
   audio.playFanfare(isShinyRoll);
 }
 
 function setTraitMeter(id, val) {
-  const fill = document.getElementById(id);
-  const text = document.getElementById(id + '-val');
-  fill.style.width = val + '%';
-  text.textContent = val + '%';
+  const fill = $(id);
+  const text = $(id + '-val');
+  if (fill) fill.style.width = val + '%';
+  if (text) text.textContent = val + '%';
 }
 
 function resetScan() {
   stopCamera();
-  resultCard.style.display = 'none';
-  scanOverlay.style.display = 'none';
-  inputSection.style.display = 'block';
-  previewBox.style.display = 'none';
-  preview.src = '';
+  if (resultCard) resultCard.style.display = 'none';
+  if (scanOverlay) scanOverlay.style.display = 'none';
+  if (inputSection) inputSection.style.display = 'block';
+  if (previewBox) previewBox.style.display = 'none';
+  if (preview) preview.src = '';
   currentImageSrc = null;
-  analyzeBtn.disabled = true;
-  fileInput.value = '';
-  faceDetectPill.style.display = 'none';
+  if (analyzeBtn) analyzeBtn.disabled = true;
+  if (fileInput) fileInput.value = '';
+  if (faceDetectPill) faceDetectPill.style.display = 'none';
 }
 
 // =====================================================================
@@ -710,7 +795,6 @@ function renderFireRedTrainerCard(targetCanvas, matchObj, traits) {
   const uImg = new Image();
   uImg.crossOrigin = 'anonymous';
   uImg.onload = () => {
-    // Draw User Portrait frame
     ctx.save();
     ctx.strokeStyle = '#334155';
     ctx.lineWidth = 3;
@@ -719,15 +803,15 @@ function renderFireRedTrainerCard(targetCanvas, matchObj, traits) {
     ctx.drawImage(uImg, photoX, photoY, photoSize, photoSize);
     ctx.restore();
 
-    // Draw Pokémon Sprite / Artwork
     const pImg = new Image();
     pImg.crossOrigin = 'anonymous';
     pImg.onload = () => {
       ctx.drawImage(pImg, pImgX, pImgY, 130, 130);
     };
-    pImg.src = document.getElementById('pokemon-img').src;
+    const mainPkmEl = $('pokemon-img');
+    if (mainPkmEl) pImg.src = mainPkmEl.src;
   };
-  uImg.src = preview.src;
+  if (preview && preview.src) uImg.src = preview.src;
 
   // 7. Bottom Section: Official BADGES Bar
   const badgeBarY = margin + cardH - 85;
@@ -741,7 +825,6 @@ function renderFireRedTrainerCard(targetCanvas, matchObj, traits) {
   ctx.font = 'bold 11px "Press Start 2P", monospace';
   ctx.fillText('BADGES', margin + 28, badgeBarY + 16);
 
-  // Draw 8 Official Kanto Gym Badges
   const badgeStartX = margin + 130;
   const badgeSpacing = (cardW - 170) / 8;
   for (let i = 0; i < 8; i++) {
@@ -780,21 +863,21 @@ function drawOfficialBadge(ctx, cx, cy, idx) {
   ctx.lineWidth = 2;
   ctx.strokeStyle = '#334155';
 
-  if (idx === 0) { // 1. Boulder Badge (Grey octagonal stone)
+  if (idx === 0) { // Boulder
     ctx.fillStyle = '#94a3b8';
     ctx.beginPath();
     ctx.moveTo(cx - 10, cy - 14); ctx.lineTo(cx + 10, cy - 14);
     ctx.lineTo(cx + 16, cy); ctx.lineTo(cx + 10, cy + 14);
     ctx.lineTo(cx - 10, cy + 14); ctx.lineTo(cx - 16, cy);
     ctx.closePath(); ctx.fill(); ctx.stroke();
-  } else if (idx === 1) { // 2. Cascade Badge (Blue raindrop)
+  } else if (idx === 1) { // Cascade
     ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
     ctx.moveTo(cx, cy - 16);
     ctx.bezierCurveTo(cx + 14, cy - 2, cx + 14, cy + 12, cx, cy + 14);
     ctx.bezierCurveTo(cx - 14, cy + 12, cx - 14, cy - 2, cx, cy - 16);
     ctx.fill(); ctx.stroke();
-  } else if (idx === 2) { // 3. Thunder Badge (Yellow 8-point star)
+  } else if (idx === 2) { // Thunder
     ctx.fillStyle = '#facc15';
     ctx.beginPath();
     for (let i = 0; i < 8; i++) {
@@ -805,7 +888,7 @@ function drawOfficialBadge(ctx, cx, cy, idx) {
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.closePath(); ctx.fill(); ctx.stroke();
-  } else if (idx === 3) { // 4. Rainbow Badge (Multicolor flower petal)
+  } else if (idx === 3) { // Rainbow
     const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#6366f1', '#a855f7', '#ec4899'];
     for (let i = 0; i < 8; i++) {
       ctx.fillStyle = colors[i];
@@ -815,18 +898,18 @@ function drawOfficialBadge(ctx, cx, cy, idx) {
       ctx.fill();
     }
     ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
-  } else if (idx === 4) { // 5. Soul Badge (Pink/Purple heart)
+  } else if (idx === 4) { // Soul
     ctx.fillStyle = '#ec4899';
     ctx.beginPath();
     ctx.moveTo(cx, cy + 12);
     ctx.bezierCurveTo(cx - 16, cy + 2, cx - 14, cy - 14, cx, cy - 6);
     ctx.bezierCurveTo(cx + 14, cy - 14, cx + 16, cy + 2, cx, cy + 12);
     ctx.fill(); ctx.stroke();
-  } else if (idx === 5) { // 6. Marsh Badge (Golden concentric circles)
+  } else if (idx === 5) { // Marsh
     ctx.fillStyle = '#fbbf24';
     ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fillStyle = '#f59e0b'; ctx.fill(); ctx.stroke();
-  } else if (idx === 6) { // 7. Volcano Badge (Red/orange flame)
+  } else if (idx === 6) { // Volcano
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
     ctx.moveTo(cx, cy - 16);
@@ -834,7 +917,7 @@ function drawOfficialBadge(ctx, cx, cy, idx) {
     ctx.quadraticCurveTo(cx, cy + 16, cx - 12, cy + 12);
     ctx.quadraticCurveTo(cx - 14, cy - 4, cx, cy - 16);
     ctx.fill(); ctx.stroke();
-  } else if (idx === 7) { // 8. Earth Badge (Green leaf feather)
+  } else if (idx === 7) { // Earth
     ctx.fillStyle = '#22c55e';
     ctx.beginPath();
     ctx.moveTo(cx, cy - 16); ctx.lineTo(cx + 10, cy); ctx.lineTo(cx + 5, cy + 14);
@@ -845,28 +928,29 @@ function drawOfficialBadge(ctx, cx, cy, idx) {
 }
 
 // Download Button
-document.getElementById('download-card-btn').addEventListener('click', () => {
-  if (!currentBestMatch || !fireredCanvas) return;
-  const a = document.createElement('a');
-  a.download = `TrainerCard-${currentTrainerName}-${currentBestMatch.p.name}.png`;
-  a.href = fireredCanvas.toDataURL('image/png');
-  a.click();
-});
+const downloadBtn = $('download-card-btn');
+if (downloadBtn) {
+  downloadBtn.addEventListener('click', () => {
+    if (!currentBestMatch || !fireredCanvas) return;
+    const a = document.createElement('a');
+    a.download = `TrainerCard-${currentTrainerName}-${currentBestMatch.p.name}.png`;
+    a.href = fireredCanvas.toDataURL('image/png');
+    a.click();
+  });
+}
 
 // Copy Summary
-document.getElementById('share-summary-btn').addEventListener('click', () => {
-  if (!currentBestMatch) return;
-  const p = currentBestMatch.p;
-  const text = `🎮 Official Kanto Trainer Card!
-Trainer: ${currentTrainerName} (IDNo.${currentTrainerId})
-Time of Scan: ${currentScanTimeStr}
-Pokémon Partner: #${String(p.id).padStart(3, '0')} ${p.name} (${p.types.join('/')})
-Resonance: ${currentBestMatch.sync}%
-"${p.lore}"`;
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Trainer Card summary copied to clipboard!');
+const shareBtn = $('share-summary-btn');
+if (shareBtn) {
+  shareBtn.addEventListener('click', () => {
+    if (!currentBestMatch) return;
+    const p = currentBestMatch.p;
+    const text = `🎮 Official Kanto Trainer Card!\nTrainer: ${currentTrainerName} (IDNo.${currentTrainerId})\nTime of Scan: ${currentScanTimeStr}\nPokémon Partner: #${String(p.id).padStart(3, '0')} ${p.name} (${p.types.join('/')})\nResonance: ${currentBestMatch.sync}%\n"${p.lore}"`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Trainer Card summary copied to clipboard!');
+    });
   });
-});
+}
 
 // Analytics Event Logger
 function getStoredScans() {
@@ -896,88 +980,101 @@ function logScanEvent(evt) {
 }
 
 // Analytics Modal Handlers
-const analyticsModal = document.getElementById('analytics-modal');
-const openAnalyticsBtn = document.getElementById('open-analytics-btn');
-const analyticsCloseBtn = document.getElementById('analytics-close-btn');
+const analyticsModal = $('analytics-modal');
+const openAnalyticsBtn = $('open-analytics-btn');
+const analyticsCloseBtn = $('analytics-close-btn');
 
-openAnalyticsBtn.addEventListener('click', openAnalyticsModal);
-analyticsCloseBtn.addEventListener('click', () => { analyticsModal.style.display = 'none'; });
+if (openAnalyticsBtn) openAnalyticsBtn.addEventListener('click', openAnalyticsModal);
+if (analyticsCloseBtn) analyticsCloseBtn.addEventListener('click', () => { if (analyticsModal) analyticsModal.style.display = 'none'; });
 
 function openAnalyticsModal() {
-  analyticsModal.style.display = 'block';
+  if (analyticsModal) analyticsModal.style.display = 'block';
   renderAnalyticsDashboard();
 }
 
 function renderAnalyticsDashboard() {
   const scans = getStoredScans();
-  document.getElementById('kpi-total-scans').textContent = scans.length;
+  safeSetText('kpi-total-scans', scans.length);
   const trainers = new Set(scans.map(s => s.trainer_name));
-  document.getElementById('kpi-unique-trainers').textContent = trainers.size;
+  safeSetText('kpi-unique-trainers', trainers.size);
 
   if (scans.length > 0) {
     const avgSync = Math.round(scans.reduce((acc, s) => acc + s.sync_rate, 0) / scans.length);
-    document.getElementById('kpi-avg-sync').textContent = avgSync + '%';
+    safeSetText('kpi-avg-sync', avgSync + '%');
     const shinies = scans.filter(s => s.is_shiny === 1).length;
-    document.getElementById('kpi-shiny-count').textContent = shinies;
+    safeSetText('kpi-shiny-count', shinies);
   } else {
-    document.getElementById('kpi-avg-sync').textContent = '0%';
-    document.getElementById('kpi-shiny-count').textContent = '0';
+    safeSetText('kpi-avg-sync', '0%');
+    safeSetText('kpi-shiny-count', '0');
   }
 
-  const tbody = document.getElementById('analytics-tbody');
-  tbody.innerHTML = '';
-  if (scans.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 16px;">No scans recorded yet.</td></tr>';
-    return;
-  }
+  const tbody = $('analytics-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    if (scans.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 16px;">No scans recorded yet.</td></tr>';
+      return;
+    }
 
-  scans.slice(0, 15).forEach(s => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-family: monospace; color: #38bdf8;">${s.scan_id}</td>
-      <td style="font-weight: 700;">${s.trainer_name}</td>
-      <td style="font-family: monospace; color: #fbbf24;">${s.trainer_id || '45256'}</td>
-      <td style="color: #94a3b8; font-size: 11px;">${s.timestamp}</td>
-      <td><span style="text-transform: capitalize;">${s.emotion}</span></td>
-      <td>#${String(s.pokemon_id).padStart(3, '0')} ${s.pokemon_name}</td>
-      <td style="font-family: monospace; color: #4ade80;">${s.sync_rate}%</td>
-      <td>${s.is_shiny ? '✨ Yes' : 'No'}</td>
-    `;
-    tbody.appendChild(tr);
+    scans.slice(0, 15).forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family: monospace; color: #38bdf8;">${s.scan_id}</td>
+        <td style="font-weight: 700;">${s.trainer_name}</td>
+        <td style="font-family: monospace; color: #fbbf24;">${s.trainer_id || '45256'}</td>
+        <td style="color: #94a3b8; font-size: 11px;">${s.timestamp}</td>
+        <td><span style="text-transform: capitalize;">${s.emotion}</span></td>
+        <td>#${String(s.pokemon_id).padStart(3, '0')} ${s.pokemon_name}</td>
+        <td style="font-family: monospace; color: #4ade80;">${s.sync_rate}%</td>
+        <td>${s.is_shiny ? '✨ Yes' : 'No'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+const clearDataBtn = $('clear-data-btn');
+if (clearDataBtn) {
+  clearDataBtn.addEventListener('click', () => {
+    if (confirm('Clear local scan analytics log?')) {
+      localStorage.removeItem('poketwin_analytics_fact');
+      renderAnalyticsDashboard();
+    }
   });
 }
 
-document.getElementById('clear-data-btn').addEventListener('click', () => {
-  if (confirm('Clear local scan analytics log?')) {
-    localStorage.removeItem('poketwin_analytics_fact');
-    renderAnalyticsDashboard();
-  }
-});
-
 // CSV & SQL Exporters
-document.getElementById('export-fact-csv-btn').addEventListener('click', () => {
-  const scans = getStoredScans();
-  if (scans.length === 0) { alert('No scans to export yet!'); return; }
-  const headers = ['scan_id', 'trainer_name', 'trainer_id', 'scan_timestamp', 'detected_emotion', 'matched_pokemon_id', 'matched_pokemon_name', 'primary_type', 'sync_rate_pct', 'is_shiny'];
-  let csv = headers.join(',') + '\n';
-  scans.forEach(s => {
-    csv += `${s.scan_id},"${s.trainer_name}","${s.trainer_id || '45256'}","${s.timestamp}","${s.emotion}",${s.pokemon_id},"${s.pokemon_name}","${s.primary_type}",${s.sync_rate},${s.is_shiny}\n`;
+const exportFactBtn = $('export-fact-csv-btn');
+if (exportFactBtn) {
+  exportFactBtn.addEventListener('click', () => {
+    const scans = getStoredScans();
+    if (scans.length === 0) { alert('No scans to export yet!'); return; }
+    const headers = ['scan_id', 'trainer_name', 'trainer_id', 'scan_timestamp', 'detected_emotion', 'matched_pokemon_id', 'matched_pokemon_name', 'primary_type', 'sync_rate_pct', 'is_shiny'];
+    let csv = headers.join(',') + '\n';
+    scans.forEach(s => {
+      csv += `${s.scan_id},"${s.trainer_name}","${s.trainer_id || '45256'}","${s.timestamp}","${s.emotion}",${s.pokemon_id},"${s.pokemon_name}","${s.primary_type}",${s.sync_rate},${s.is_shiny}\n`;
+    });
+    downloadFile(csv, 'poketwin_fact_user_scans.csv', 'text/csv');
   });
-  downloadFile(csv, 'poketwin_fact_user_scans.csv', 'text/csv');
-});
+}
 
-document.getElementById('export-dim-csv-btn').addEventListener('click', () => {
-  const headers = ['pokedex_id', 'name', 'primary_type', 'secondary_type', 'rgb_r', 'rgb_g', 'rgb_b', 'nature', 'signature_move', 'lore'];
-  let csv = headers.join(',') + '\n';
-  KANTO_POKEDEX.forEach(p => {
-    const sec = p.types[1] ? `"${p.types[1]}"` : '';
-    csv += `${p.id},"${p.name}","${p.types[0]}",${sec},${p.c[0]},${p.c[1]},${p.c[2]},"${p.nature}","${p.move}","${p.lore.replace(/"/g, '""')}"\n`;
+const exportDimBtn = $('export-dim-csv-btn');
+if (exportDimBtn) {
+  exportDimBtn.addEventListener('click', () => {
+    const headers = ['pokedex_id', 'name', 'primary_type', 'secondary_type', 'rgb_r', 'rgb_g', 'rgb_b', 'nature', 'signature_move', 'lore'];
+    let csv = headers.join(',') + '\n';
+    KANTO_POKEDEX.forEach(p => {
+      const sec = p.types[1] ? `"${p.types[1]}"` : '';
+      csv += `${p.id},"${p.name}","${p.types[0]}",${sec},${p.c[0]},${p.c[1]},${p.c[2]},"${p.nature}","${p.move}","${p.lore.replace(/"/g, '""')}"\n`;
+    });
+    downloadFile(csv, 'poketwin_dim_pokemon.csv', 'text/csv');
   });
-  downloadFile(csv, 'poketwin_dim_pokemon.csv', 'text/csv');
-});
+}
 
-document.getElementById('export-sql-btn').addEventListener('click', () => {
-  const sql = `-- PokéTwin Relational Schema & Analytical Queries
+const exportSqlBtn = $('export-sql-btn');
+if (exportSqlBtn) {
+  exportSqlBtn.addEventListener('click', () => {
+    const sql = `-- PokéTwin Relational Schema & Analytical Queries
 CREATE TABLE dim_pokemon (
     pokedex_id INT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
@@ -1004,8 +1101,9 @@ SELECT p.pokedex_id, p.name, p.primary_type, COUNT(s.scan_id) AS total_matches
 FROM fact_user_scans s JOIN dim_pokemon p ON s.matched_pokemon_id = p.pokedex_id
 GROUP BY p.pokedex_id, p.name, p.primary_type ORDER BY total_matches DESC;
 `;
-  downloadFile(sql, 'poketwin_schema_queries.sql', 'text/plain');
-});
+    downloadFile(sql, 'poketwin_schema_queries.sql', 'text/plain');
+  });
+}
 
 function downloadFile(content, fileName, mimeType) {
   const blob = new Blob([content], { type: mimeType });
@@ -1016,23 +1114,24 @@ function downloadFile(content, fileName, mimeType) {
 }
 
 // 151 Pokédex Modal
-const modal = document.getElementById('pokedex-modal');
-const openModalBtn = document.getElementById('open-roster-btn');
-const closeModalBtn = document.getElementById('modal-close-btn');
-const searchInput = document.getElementById('search-151');
-const typeFilter = document.getElementById('filter-type');
-const modalGrid = document.getElementById('modal-roster-grid');
+const modal = $('pokedex-modal');
+const openModalBtn = $('open-roster-btn');
+const closeModalBtn = $('modal-close-btn');
+const searchInput = $('search-151');
+const typeFilter = $('filter-type');
+const modalGrid = $('modal-roster-grid');
 
-openModalBtn.addEventListener('click', () => { modal.style.display = 'block'; renderModalRoster(); });
-closeModalBtn.addEventListener('click', () => modal.style.display = 'none');
+if (openModalBtn) openModalBtn.addEventListener('click', () => { if (modal) modal.style.display = 'block'; renderModalRoster(); });
+if (closeModalBtn) closeModalBtn.addEventListener('click', () => { if (modal) modal.style.display = 'none'; });
 window.addEventListener('click', (e) => {
   if (e.target === modal) modal.style.display = 'none';
   if (e.target === analyticsModal) analyticsModal.style.display = 'none';
 });
 
 function renderModalRoster() {
-  const query = searchInput.value.toLowerCase().trim();
-  const filter = typeFilter.value;
+  if (!modalGrid) return;
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  const filter = typeFilter ? typeFilter.value : '';
   const filtered = KANTO_POKEDEX.filter(p => {
     const padId = String(p.id).padStart(3, '0');
     return (p.name.toLowerCase().includes(query) || padId.includes(query)) && (!filter || p.types.includes(filter));
@@ -1050,7 +1149,7 @@ function renderModalRoster() {
       <div class="roster-name">${p.name}</div>
     `;
     el.addEventListener('click', () => {
-      modal.style.display = 'none';
+      if (modal) modal.style.display = 'none';
       currentTrainerName = (trainerNameInput ? trainerNameInput.value.trim() : '') || 'Trainer';
       currentTrainerId = (trainerIdInput ? trainerIdInput.value.trim() : '') || '45256';
       const now = new Date();
@@ -1064,12 +1163,12 @@ function renderModalRoster() {
       ], { energy: 75, chill: 65, cuteness: 70, mystery: 50, bravery: 80, avgR: p.c[0], avgG: p.c[1], avgB: p.c[2] });
       
       renderFireRedTrainerCard(fireredCanvas, topObj, currentTraits);
-      inputSection.style.display = 'none';
-      resultCard.style.display = 'block';
+      if (inputSection) inputSection.style.display = 'none';
+      if (resultCard) resultCard.style.display = 'block';
     });
     modalGrid.appendChild(el);
   });
 }
 
-searchInput.addEventListener('input', renderModalRoster);
-typeFilter.addEventListener('change', renderModalRoster);
+if (searchInput) searchInput.addEventListener('input', renderModalRoster);
+if (typeFilter) typeFilter.addEventListener('change', renderModalRoster);

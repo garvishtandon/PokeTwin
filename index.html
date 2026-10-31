@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PokéTwin: Biometric & Analytics Edition</title>
+<title>PokéTwin: FireRed Trainer Card & Biometric Pokédex</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -19,13 +19,13 @@
     <div class="mini-lens red"></div>
     <div class="mini-lens yellow"></div>
     <div class="mini-lens green"></div>
-    <span class="kanto-tag">BIOMETRIC OS v2.5 • SQL & POWER BI READY</span>
+    <span class="kanto-tag">KANTO OS v3.0 • ALL 151 UNLOCKED</span>
   </div>
   <h1>PokéTwin</h1>
-  <p class="subtitle">Facial biometric Pokédex matcher with embedded SQL & Power BI analytics</p>
+  <p class="subtitle">Biometric facial landmark scanner with authentic FireRed Trainer Card generation</p>
   
   <div class="top-nav-actions">
-    <button class="nav-btn" id="open-roster-btn">📖 Browse 151</button>
+    <button class="nav-btn" id="open-roster-btn">📖 Browse 151 Pokédex</button>
     <button class="nav-btn accent-nav" id="open-analytics-btn">📊 SQL & Power BI Hub</button>
   </div>
 </header>
@@ -35,22 +35,34 @@
   <section class="card" id="input-section">
     <div class="pokedex-subbar">
       <div class="section-title">
-        <span>👁️</span> Facial Expression & Vibe Scanner
+        <span>👁️</span> Facial Expression & Biometric Scanner
       </div>
-      <span class="badge-silph">SILPH CO. LINK ACTIVE</span>
+      <span class="badge-silph">KANTO SYNC VERIFIED</span>
     </div>
 
-    <!-- Trainer Identity Input -->
+    <!-- Trainer Identity & ID Number Input Bar -->
     <div class="trainer-id-bar">
-      <label for="trainer-name-input" class="trainer-label">
-        <span class="trainer-icon">🪪</span> TRAINER NAME:
-      </label>
-      <input type="text" id="trainer-name-input" class="trainer-input" placeholder="Enter your name (e.g. Garvish, Ash)..." maxlength="30">
+      <div class="trainer-field">
+        <label for="trainer-name-input" class="trainer-label">
+          <span class="trainer-icon">🪪</span> TRAINER NAME:
+        </label>
+        <input type="text" id="trainer-name-input" class="trainer-input" placeholder="Your name (e.g. Garvish, Ash)..." maxlength="20">
+      </div>
+      
+      <div class="trainer-field">
+        <label for="trainer-id-input" class="trainer-label">
+          <span>🔢</span> IDNo. :
+        </label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="trainer-id-input" class="trainer-input id-input" placeholder="45256" maxlength="5">
+          <button type="button" class="btn btn-secondary roll-id-btn" id="roll-id-btn" title="Generate Random Trainer ID">🎲</button>
+        </div>
+      </div>
     </div>
 
     <div class="upload-zone" id="drop-zone">
-      <p style="font-size: 15px; margin-bottom: 4px; font-weight: 600;">Drag and drop your selfie/portrait here</p>
-      <p style="font-size: 13px; color: #94a3b8;">Analyzes facial expression, mood & chromatic harmonies</p>
+      <p style="font-size: 15px; margin-bottom: 4px; font-weight: 600;">Drag and drop your portrait / selfie photo here</p>
+      <p style="font-size: 13px; color: #94a3b8;">Scans face geometry, smile energy, eye focus & contrast</p>
       
       <div class="upload-actions" onclick="event.stopPropagation()">
         <label class="btn btn-primary" for="file-input">
@@ -67,7 +79,7 @@
       <video id="video" autoplay playsinline></video>
       <canvas id="face-hud-canvas"></canvas>
       <div style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; z-index: 10;">
-        <button class="btn btn-primary" id="capture-btn">📸 Capture Facial Scan</button>
+        <button class="btn btn-primary" id="capture-btn">📸 Capture Biometric Frame</button>
       </div>
     </div>
 
@@ -84,19 +96,19 @@
 
     <div style="text-align: center; margin-top: 16px;">
       <button class="btn btn-accent" id="analyze-btn" disabled style="padding: 14px 28px; font-size: 16px;">
-        🔍 Scan Facial Vibe & Twin
+        🔍 Scan Facial Vibe & Generate Card
       </button>
     </div>
 
     <div class="presets-section">
-      <div class="presets-title">⚡ QUICK EXPRESSION & VIBE SAMPLES (CLICK TO TEST)</div>
+      <div class="presets-title">⚡ QUICK EXPRESSION & VIBE SAMPLES (CLICK TO TEST VARIATION)</div>
       <div class="preset-grid">
         <div class="preset-pill" onclick="loadSampleExpression('happy')">😄 Radiant Smile</div>
         <div class="preset-pill" onclick="loadSampleExpression('calm')">😌 Chill & Zen</div>
         <div class="preset-pill" onclick="loadSampleExpression('fierce')">😠 Bold & Fierce</div>
         <div class="preset-pill" onclick="loadSampleExpression('mystic')">🤔 Deep Introspective</div>
         <div class="preset-pill" onclick="loadSampleExpression('playful')">😜 Playful / Quirky</div>
-        <div class="preset-pill" onclick="loadSampleExpression('surprised')">😲 High Energy Shock</div>
+        <div class="preset-pill" onclick="loadSampleExpression('surprised')">😲 High Voltage Shock</div>
       </div>
     </div>
   </section>
@@ -115,17 +127,23 @@
   <!-- Results Section -->
   <section class="card" id="result-card">
     <div class="result-header">
-      <div class="match-rate-pill" id="match-score-badge">KANTO SYNC: 96%</div>
+      <div class="match-rate-pill" id="match-score-badge">KANTO SYNC: 98%</div>
       <div class="expression-badge" id="detected-expression-badge">EXPRESSION: RADIANT JOY 😄</div>
       <h2 style="font-family: var(--font-hud); font-size: 26px; text-transform: uppercase;" id="result-headline">
         Trainer, your Kanto Spirit Twin is...
       </h2>
-      <div class="trainer-tag-display" id="trainer-tag-display">TRAINER ID: GUEST</div>
+      <div class="trainer-tag-display" id="trainer-tag-display">TRAINER: GARVISH • IDNo. 45256</div>
+    </div>
+
+    <!-- Official FireRed / LeafGreen Trainer Card Canvas Display -->
+    <div class="card-preview-wrapper">
+      <div class="card-preview-title">🎮 OFFICIAL KANTO TRAINER CARD</div>
+      <canvas id="firered-card-canvas" width="750" height="480"></canvas>
     </div>
 
     <div class="pokemon-showcase">
       <div class="pokemon-art-wrap">
-        <span class="shiny-badge" id="shiny-tag">✨ SHINY KANTO!</span>
+        <span class="shiny-badge" id="shiny-tag">✨ SHINY ENCOUNTER!</span>
         <img id="pokemon-img" src="" alt="Matched Pokémon">
       </div>
       <div class="pokemon-info">
@@ -134,11 +152,11 @@
         <p class="pokemon-lore" id="pokemon-lore"></p>
         <div class="pokemon-specs">
           <div>TRAINER: <span id="spec-trainer-name" style="color: #38bdf8;">Trainer</span></div>
+          <div>ID NUMBER: <span id="spec-trainer-id" style="color: #fbbf24;">45256</span></div>
+          <div>TIME OF SCAN: <span id="spec-scan-time" style="color: #4ade80;">13 24</span></div>
           <div>NATURE: <span id="pokemon-nature">Adamant</span></div>
-          <div>SIGNATURE: <span id="pokemon-move">Vine Whip</span></div>
-          <div>VIBE MATCH: <span id="pokemon-vibe-match" style="color: #4ade80;">Smile Synergy</span></div>
+          <div>SIGNATURE MOVE: <span id="pokemon-move">Vine Whip</span></div>
         </div>
-        <div class="palette-swatches" id="swatch-container"></div>
       </div>
     </div>
 
@@ -176,10 +194,10 @@
     <div class="runners-grid" id="runners-container"></div>
 
     <div class="card-actions">
-      <button class="btn btn-primary" id="download-card-btn">💾 Download Passport (PNG)</button>
+      <button class="btn btn-primary" id="download-card-btn">💾 Download Retro Trainer Card (PNG)</button>
       <button class="btn btn-secondary" id="share-summary-btn">📋 Copy Summary</button>
       <button class="btn btn-accent" onclick="openAnalyticsModal()">📊 View In Analytics Hub</button>
-      <button class="btn btn-secondary" onclick="resetScan()">🔄 Try Another Photo</button>
+      <button class="btn btn-secondary" onclick="resetScan()">🔄 Scan Another Photo</button>
     </div>
   </section>
 </main>
@@ -273,6 +291,7 @@
           <tr>
             <th>Scan ID</th>
             <th>Trainer</th>
+            <th>IDNo.</th>
             <th>Timestamp</th>
             <th>Emotion</th>
             <th>Twin Pokémon</th>
