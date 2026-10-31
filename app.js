@@ -684,12 +684,17 @@ function renderFireRedTrainerCard(targetCanvas, matchObj, traits) {
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(cardTemplateImg, 0, 0, w, h);
 
-    // 1. Dynamic IDNo. (top right pill)
-    ctx.font = '21px "Press Start 2P", monospace';
-    ctx.fillStyle = '#b8c0c0';
-    ctx.fillText(currentTrainerId, 560, 86);
-    ctx.fillStyle = '#484848';
-    ctx.fillText(currentTrainerId, 558, 84);
+    // 1. Dynamic IDNo. (Wide white pill container + auto-scaling font)
+    const idBoxX = 405, idBoxY = 42, idBoxW = 315, idBoxH = 44;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, idBoxX, idBoxY, idBoxW, idBoxH, 10, true, true);
+
+    const fullIdText = `IDNo.${currentTrainerId}`;
+    ctx.font = fullIdText.length > 12 ? '12px "Press Start 2P", monospace' : fullIdText.length > 9 ? '13px "Press Start 2P", monospace' : '15px "Press Start 2P", monospace';
+    ctx.fillStyle = '#1e293b';
+    ctx.fillText(fullIdText, idBoxX + 14, idBoxY + 28);
 
     // 2. Dynamic NAME (top row)
     ctx.font = '20px "Press Start 2P", monospace';
