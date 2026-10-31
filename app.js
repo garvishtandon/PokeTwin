@@ -684,29 +684,35 @@ function renderFireRedTrainerCard(targetCanvas, matchObj, traits) {
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(cardTemplateImg, 0, 0, w, h);
 
-    // 1. Dynamic IDNo. (top right pill) - auto-adjusts size & right-aligns so it never overflows box
+    // 1. Dynamic IDNo. (top right pill) - perfectly baseline-aligned with IDNo.
     const cleanIdStr = String(currentTrainerId || '45256').trim();
-    let idFontSize = 21;
+    let idFontSize = 18;
     ctx.font = `${idFontSize}px "Press Start 2P", monospace`;
-    while (ctx.measureText(cleanIdStr).width > 146 && idFontSize > 10) {
+    while (ctx.measureText(cleanIdStr).width > 148 && idFontSize > 10) {
       idFontSize -= 1;
       ctx.font = `${idFontSize}px "Press Start 2P", monospace`;
     }
-    const idWidth = ctx.measureText(cleanIdStr).width;
-    const idX = 706 - idWidth;
-    const idY = 86;
+    const idX = 564;
+    const idY = 90;
     ctx.fillStyle = '#b8c0c0';
+    ctx.fillText(cleanIdStr, idX + 1, idY + 1);
+    ctx.fillStyle = '#484848';
     ctx.fillText(cleanIdStr, idX, idY);
-    ctx.fillStyle = '#484848';
-    ctx.fillText(cleanIdStr, idX - 2, idY - 2);
 
-    // 2. Dynamic NAME (top row)
-    ctx.font = '20px "Press Start 2P", monospace';
-    const tName = currentTrainerName.toUpperCase().substring(0, 12);
+    // 2. Dynamic NAME (top row) - sits directly on the name line and matches NAME: baseline
+    const tName = currentTrainerName.toUpperCase().substring(0, 14);
+    let nameFontSize = 20;
+    ctx.font = `${nameFontSize}px "Press Start 2P", monospace`;
+    while (ctx.measureText(tName).width > 230 && nameFontSize > 11) {
+      nameFontSize -= 1;
+      ctx.font = `${nameFontSize}px "Press Start 2P", monospace`;
+    }
+    const nameX = 195;
+    const nameY = 150;
     ctx.fillStyle = '#c0c8c8';
-    ctx.fillText(tName, 197, 144);
+    ctx.fillText(tName, nameX + 2, nameY + 2);
     ctx.fillStyle = '#484848';
-    ctx.fillText(tName, 195, 142);
+    ctx.fillText(tName, nameX, nameY);
 
     // 3. Dynamic POKéMON Name (replaces Pokédex count)
     const pName = matchObj.p.name.toUpperCase();
