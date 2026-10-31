@@ -691,13 +691,20 @@ input[type=file] { display: none; }
 .trainer-id-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(6, 182, 212, 0.3);
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
+}
+.trainer-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 250px;
 }
 .trainer-label {
   font-family: var(--font-hud);
@@ -708,10 +715,11 @@ input[type=file] { display: none; }
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 .trainer-input {
   flex: 1;
-  min-width: 220px;
+  min-width: 150px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
@@ -720,12 +728,39 @@ input[type=file] { display: none; }
   font-family: var(--font-hud);
   font-size: 14px;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 .trainer-input:focus {
   outline: none;
   border-color: var(--hud-cyan);
   background: rgba(6, 182, 212, 0.1);
   box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+}
+.id-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.id-input {
+  min-width: 140px !important;
+  max-width: 175px !important;
+  width: 155px;
+  text-align: center;
+  font-family: var(--font-retro) !important;
+  font-size: 12px !important;
+  color: #fbbf24 !important;
+  letter-spacing: 1px;
+  padding: 8px 10px !important;
+  box-sizing: border-box;
+}
+.roll-id-btn {
+  padding: 8px 12px !important;
+  font-size: 15px !important;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .trainer-tag-display {
   display: inline-block;
@@ -888,23 +923,4 @@ input[type=file] { display: none; }
   border-radius: 16px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
   display: inline-block;
-}
-.trainer-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 200px;
-}
-.id-input {
-  max-width: 100px;
-  text-align: center;
-  font-family: var(--font-retro) !important;
-  font-size: 11px !important;
-  color: #fbbf24 !important;
-}
-.roll-id-btn {
-  padding: 8px 12px !important;
-  font-size: 15px !important;
-  cursor: pointer;
 }
