@@ -864,3 +864,46 @@ input[type=file] { display: none; }
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   color: #e2e8f0;
 }
+/* FireRed Trainer Card Display */
+.card-preview-wrapper {
+  margin: 20px auto 26px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.card-preview-title {
+  font-family: var(--font-retro);
+  font-size: 11px;
+  color: #38bdf8;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+#firered-card-canvas {
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+  display: inline-block;
+}
+.trainer-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+.id-input {
+  max-width: 100px;
+  text-align: center;
+  font-family: var(--font-retro) !important;
+  font-size: 11px !important;
+  color: #fbbf24 !important;
+}
+.roll-id-btn {
+  padding: 8px 12px !important;
+  font-size: 15px !important;
+  cursor: pointer;
+}
