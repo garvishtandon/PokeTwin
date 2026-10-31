@@ -1006,3 +1006,70 @@ if (exportFactBtn) {
     downloadFile(csv, 'jiit_poketwin_scans.csv', 'text/csv');
   });
 }
+
+
+
+// Robust Export Bindings
+window.exportFactCsv = function() {
+  const scans = getStoredScans();
+  if (scans.length === 0) { alert('No scans to export yet! Perform a scan first.'); return; }
+  const headers = ['name', 'pokemon', 'mood', 'email', 'year_of_study'];
+  let csv = headers.join(',') + '\n';
+  scans.forEach(s => {
+    const tid = s.trainer_id || '45256';
+    const email = `${tid}@mail.jiit.ac.in`;
+    const year = getYearOfStudy(tid);
+    csv += `"${s.trainer_name}","${s.pokemon_name}","${s.emotion}","${email}","${year}"\n`;
+  });
+  downloadFile(csv, 'jiit_poketwin_scans.csv', 'text/csv');
+};
+
+window.exportDimCsv = function() {
+  const headers = ['pokedex_id', 'name', 'primary_type', 'secondary_type', 'rgb_r', 'rgb_g', 'rgb_b', 'nature', 'signature_move', 'lore'];
+  let csv = headers.join(',') + '\n';
+  KANTO_POKEDEX.forEach(p => {
+    const sec = p.types[1] ? `"${p.types[1]}"` : '';
+    csv += `${p.id},"${p.name}","${p.types[0]}",${sec},${p.c[0]},${p.c[1]},${p.c[2]},"${p.nature}","${p.move}","${p.lore.replace(/"/g, '""')}"\n`;
+  });
+  downloadFile(csv, 'poketwin_dim_pokemon.csv', 'text/csv');
+};
+
+window.exportSqlQueries = function() {
+  const sql = `-- PokéTwin Relational Schema & Analytical Queries
+CREATE TABLE dim_pokemon (
+    pokedex_id INT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    primary_type VARCHAR(30) NOT NULL,
+    secondary_type VARCHAR(30),
+    nature VARCHAR(30),
+    signature_move VARCHAR(60),
+    lore TEXT
+);
+
+CREATE TABLE fact_user_scans (
+    scan_id VARCHAR(20) PRIMARY KEY,
+    trainer_name VARCHAR(50) NOT NULL,
+    trainer_id VARCHAR(15) NOT NULL,
+    scan_timestamp TIMESTAMP NOT NULL,
+    detected_emotion VARCHAR(30) NOT NULL,
+    matched_pokemon_id INT NOT NULL,
+    sync_rate_pct DECIMAL(5,2),
+    is_shiny INT DEFAULT 0,
+    CONSTRAINT fk_pokemon FOREIGN KEY (matched_pokemon_id) REFERENCES dim_pokemon(pokedex_id)
+);
+
+SELECT p.pokedex_id, p.name, p.primary_type, COUNT(s.scan_id) AS total_matches
+FROM fact_user_scans s JOIN dim_pokemon p ON s.matched_pokemon_id = p.pokedex_id
+GROUP BY p.pokedex_id, p.name, p.primary_type ORDER BY total_matches DESC;
+`;
+  downloadFile(sql, 'poketwin_schema_queries.sql', 'text/plain');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fBtn = $('export-fact-csv-btn');
+  if (fBtn) fBtn.onclick = window.exportFactCsv;
+  const dBtn = $('export-dim-csv-btn');
+  if (dBtn) dBtn.onclick = window.exportDimCsv;
+  const sBtn = $('export-sql-btn');
+  if (sBtn) sBtn.onclick = window.exportSqlQueries;
+});
