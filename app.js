@@ -852,7 +852,7 @@ if (clearDataBtn) {
 }
 
 // CSV & SQL Exporters
-const exportFactBtn = $('export-fact-csv-btn');
+// export replacement
 if (exportFactBtn) {
   exportFactBtn.addEventListener('click', () => {
     const scans = getStoredScans();
@@ -980,3 +980,29 @@ function renderModalRoster() {
 
 if (searchInput) searchInput.addEventListener('input', renderModalRoster);
 if (typeFilter) typeFilter.addEventListener('change', renderModalRoster);
+
+function getYearOfStudy(id) {
+  const cleanId = String(id || '').trim();
+  if (cleanId.startsWith('260') || cleanId.includes('260')) return '1st Year';
+  if (cleanId.startsWith('250') || cleanId.includes('250')) return '2nd Year';
+  if (cleanId.startsWith('240') || cleanId.includes('240')) return '3rd Year';
+  if (cleanId.startsWith('230') || cleanId.includes('230')) return '4th/5th Year';
+  return 'Student';
+}
+
+const exportFactBtn = $('export-fact-csv-btn');
+if (exportFactBtn) {
+  exportFactBtn.addEventListener('click', () => {
+    const scans = getStoredScans();
+    if (scans.length === 0) { alert('No scans to export yet!'); return; }
+    const headers = ['name', 'pokemon', 'mood', 'email', 'year_of_study'];
+    let csv = headers.join(',') + '\n';
+    scans.forEach(s => {
+      const tid = s.trainer_id || '45256';
+      const email = `${tid}@mail.jiit.ac.in`;
+      const year = getYearOfStudy(tid);
+      csv += `"${s.trainer_name}","${s.pokemon_name}","${s.emotion}","${email}","${year}"\n`;
+    });
+    downloadFile(csv, 'jiit_poketwin_scans.csv', 'text/csv');
+  });
+}
